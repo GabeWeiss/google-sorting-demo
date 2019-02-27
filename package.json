@@ -1,0 +1,28 @@
+{
+  "name": "2066_google_edgetpu",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "dependencies": {
+    "async": "^2.6.1",
+    "express": "^4.16.3",
+    "johnny-five": "^1.0.0",
+    "jquery": "^3.3.1",
+    "phidget22": "^2.0.7",
+    "readline": "^1.3.0",
+    "socket.io": "^2.1.1",
+    "tty": "^1.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://doughuck@bitbucket.org/doughuck/2066_google_edgetpu.git"
+  },
+  "author": "Douglas Huck <doug.huck@24g.com>",
+  "license": "UNLICENSED",
+  "homepage": "https://bitbucket.org/doughuck/2066_google_edgetpu#readme"
+}

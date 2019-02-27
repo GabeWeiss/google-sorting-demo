@@ -1,0 +1,55 @@
+@font-face {
+    font-family: 'google_sans';
+    src: url('googlesans-bold-webfont.woff2') format('woff2'), url('googlesans-bold-webfont.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'google_sans';
+    src: url('googlesans-medium-webfont.woff2') format('woff2'), url('googlesans-medium-webfont.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'google_sans';
+    src: url('googlesans-regular-webfont.woff2') format('woff2'), url('googlesans-regular-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'roboto';
+    src: url('roboto-bold-webfont.woff2') format('woff2'), url('roboto-bold-webfont.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'roboto';
+    src: url('roboto-light-webfont.woff2') format('woff2'), url('roboto-light-webfont.woff') format('woff');
+    font-weight: 300;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'roboto';
+    src: url('roboto-medium-webfont.woff2') format('woff2'), url('roboto-medium-webfont.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'roboto';
+    src: url('roboto-regular-webfont.woff2') format('woff2'), url('roboto-regular-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'roboto';
+    src: url('roboto-thin-webfont.woff2') format('woff2'), url('roboto-thin-webfont.woff') format('woff');
+    font-weight: 200;
+    font-style: normal;
+}

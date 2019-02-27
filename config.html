@@ -1,0 +1,79 @@
+<html>
+
+<head>
+    <style>
+        .button {
+            display: inline-block;
+            width: 100px;
+            height: 100px;
+            color: #fff;
+            background: #660;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Triggers:</h2>
+    <div class="holder">
+    </div>
+    <h2>Chute Position:</h2>
+    <div class="chute_config">
+    </div>
+    <h2>Servo Ranges:</h2>
+    <div class="servo_config">
+    </div>
+    <div class="dropper_config">
+    </div>
+    <script src="socket.io/socket.io.js"></script>
+    <script src="jquery.js"></script>
+    <script>
+        const socket = io();
+
+        $.getJSON("config.json", function(data) {
+            var servos = data.servos;
+            for (var i = 1; i <= 8; i++) {
+                $('.holder').append($('<div class="button" data-id="' + i + '">' + i + '</div>').click(function(e) {
+                    socket.emit("run", $(this).attr('data-id'));
+                }));
+                var changeFunc = function(e) {
+                    socket.emit("config", {
+                        "i": $(this).attr('data-id'),
+                        "v": $(this).val(),
+                        "s": $(this).attr('data-side'),
+                        "t": "chute",
+                    });
+                };
+                $('.chute_config').append(i + ': ').append($('<input class="chute_config_input" type="number" placeholder="' + i + '" data-side="left" data-id="' + i + '" value="' + servos["chute"].positions[i].left + '" />').change(changeFunc)).append($('<input class="chute_config_input" type="number" placeholder="' + i + '" data-side="right" data-id="' + i + '" value="' + servos["chute"].positions[i].right + '" /><br/>').change(changeFunc));
+                var servo_config_change = function(e) {
+                    socket.emit("config", {
+                        "i": $(this).attr('data-id'),
+                        "v": $(this).val(),
+                        "t": "servo",
+                        "p": $(this).attr('data-pos'),
+                    });
+                };
+                $('.servo_config').append(i + ': ').append($('<input class="servo_config_input" type="number" data-pos="open" placeholder="' + i + '" data-id="' + i + '" value="' + servos[i].open + '" />').change(servo_config_change)).append(
+                    $('<input class="servo_config_input" type="number" data-pos="close" placeholder="' + i + '" data-id="' + i + '" value="' + servos[i].close + '" /><br/>').change(servo_config_change));
+            }
+            $('.dropper_config').append('Dropper: ').append($('<input class="servo_config_input" type="number" data-pos="open" placeholder="dropper" data-id="dropper" value="' + servos["dropper"].open + '" />').change(servo_config_change)).append(
+                $('<input class="servo_config_input" type="number" data-pos="close" placeholder="dropper" data-id="dropper" value="' + servos["dropper"].close + '" /><br/>').change(servo_config_change));
+
+        });
+    </script>
+</body>
+
+</html>
+
+
+<!-- 
+	Saveable Config control panel for servo distances.
+	If light sensor blocked && ready
+	    Open door
+		Run servo to position
+	    Drop Puck
+	    If Light sensor 2 blocked || 10 seconds
+	        Reset
+            
+    9x min - max
+    1x 8 Positions
+-->
