@@ -13,22 +13,9 @@ with open('image_bytes.txt', 'wb') as f:
     f.write(image_bytes)
 
 # w640 h480 c3 bytes in RGB, or YUY2?
-image = Image.frombytes('RGB', (width, height), image_bytes, 'raw')
+image = Image.frombytes('RGB', (width, height), image_bytes, 'raw', 'RGB')
 
-side = 448
-
-left = (width - side) / 2
-top = (height - side) / 2
-
-# still not quite the same as the training images
-left = 130
-top = 30
-right = left + side
-bottom = top + side
-
-cropped = image.crop((left, top, right, bottom))
-
-result = engine.ClassifyWithImage(cropped)
+result = engine.ClassifyWithImage(image)
 
 print(result)
 
