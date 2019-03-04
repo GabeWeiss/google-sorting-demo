@@ -20,7 +20,6 @@ import android.Manifest;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
@@ -43,15 +42,11 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.nnegrey.freeze_tag.MainActivity;
-import com.nnegrey.freeze_tag.R;
 import com.nnegrey.freeze_tag.object_detection.env.ImageUtils;
-import com.orbotix.ConvenienceRobot;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+
+import com.nnegrey.freeze_tag.R;
 
 public abstract class CameraActivity extends AppCompatActivity
         implements ImageReader.OnImageAvailableListener, Camera.PreviewCallback {
@@ -77,19 +72,12 @@ public abstract class CameraActivity extends AppCompatActivity
     private Runnable postInferenceCallback;
     private Runnable imageConverter;
 
-    public static Classifier tfLiteObjectDetection;
+    public static Classifier classifier;
 
     public int CANVAS_WIDTH = 1080; // Get the width of the Canvas that is shown on screen
     public int CANVAS_HEIGHT = 1731; // Get the height of the Canvas that is shown on screen
     public float PERCENTAGE = 0.1733f;
     public float CANVAS_HEIGHT_PERCENTAGE = 1.0f - PERCENTAGE; // Remove the part that is taken by the black bar.
-
-    public static HashMap<Integer, DetectedGear> detectedSpheroBalls = new HashMap<>();
-    public static List<Classifier.Recognition> detectedBlocks = new ArrayList<>();
-
-
-
-    public static ArrayList<Integer> HUMAN_COLORS;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -100,15 +88,9 @@ public abstract class CameraActivity extends AppCompatActivity
         CANVAS_HEIGHT = displayMetrics.heightPixels;
         CANVAS_WIDTH = displayMetrics.widthPixels;
 
-        setupPlayerListeners();
-
-        try {
-            tfLiteObjectDetection = TfLiteObjectDetection.create(getAssets(),
-                    MainActivity.TF_LITE_MODEL,
-                    MainActivity.TF_LITE_OBJECT_DETECTION_IMAGE_DIMENSION);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        classifier = Classifier.create(getAssets(),
+                MainActivity.TF_LITE_MODEL,
+                MainActivity.TF_LITE_OBJECT_DETECTION_IMAGE_DIMENSION);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -118,14 +100,6 @@ public abstract class CameraActivity extends AppCompatActivity
             setFragment();
         } else {
             requestPermission();
-        }
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        for (ConvenienceRobot robot : MainActivity.spheroRobots) {
-            robot.setLed(0, 0, 0);
         }
     }
 
@@ -469,42 +443,4 @@ public abstract class CameraActivity extends AppCompatActivity
     protected abstract void onPreviewSizeChosen(final Size size, final int rotation);
     protected abstract int getLayoutId();
     protected abstract Size getDesiredPreviewFrameSize();
-
-    private void setupPlayerListeners() {
-        HUMAN_COLORS = new ArrayList<>();
-        // Setup Blue Ball
-        detectedSpheroBalls.put(Color.BLUE, new DetectedGear());
-        detectedSpheroBalls.get(Color.BLUE).index = 0;
-
-        detectedSpheroBalls.put(Color.GREEN, new DetectedGear());
-        detectedSpheroBalls.get(Color.GREEN).index = 1;
-
-        detectedSpheroBalls.put(Color.MAGENTA, new DetectedGear());
-        detectedSpheroBalls.get(Color.MAGENTA).index = 2;
-
-        detectedSpheroBalls.put(Color.RED, new DetectedGear());
-        detectedSpheroBalls.get(Color.RED).index = 3;
-
-        detectedSpheroBalls.put(Color.YELLOW, new DetectedGear());
-        detectedSpheroBalls.get(Color.YELLOW).index = 4;
-
-        detectedSpheroBalls.put(Color.WHITE, new DetectedGear());
-        detectedSpheroBalls.get(Color.WHITE).index = 5;
-
-        detectedSpheroBalls.put(Color.DKGRAY, new DetectedGear());
-        detectedSpheroBalls.get(Color.DKGRAY).index = 6;
-
-        detectedSpheroBalls.put(Color.LTGRAY, new DetectedGear());
-        detectedSpheroBalls.get(Color.LTGRAY).index = 7;
-
-        detectedSpheroBalls.put(Color.CYAN, new DetectedGear());
-        detectedSpheroBalls.get(Color.CYAN).index = 8;
-
-        detectedSpheroBalls.put(Color.GRAY, new DetectedGear());
-        detectedSpheroBalls.get(Color.GRAY).index = 9;
-
-        detectedSpheroBalls.put(Color.BLACK, new DetectedGear());
-        detectedSpheroBalls.get(Color.BLACK).index = 10;
-
-    }
 }
