@@ -1,117 +1,129 @@
 package com.nnegrey.freeze_tag.object_detection;
 
-/* Copyright 2015 The TensorFlow Authors. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-==============================================================================*/
-
+import android.content.res.AssetFileDescriptor;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
-import android.graphics.RectF;
+import android.os.Trace;
+
+import com.nnegrey.freeze_tag.MainActivity;
+
+import org.tensorflow.lite.Interpreter;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 
 /**
- * Generic interface for interacting with different recognition engines.
+ * Wrapper for frozen detection models trained using the Tensorflow Object Detection API:
+ * github.com/tensorflow/models/tree/master/research/object_detection
  */
-public interface Classifier {
+public class Classifier {
+
+    // Only return this many results.
+    private static final int NUM_DETECTIONS = 30;
+
+    // Config values.
+    private int inputSize = 224;
+
+    // Pre-allocated buffers.
+    private static int[] intValues;
+    private static byte[][] outputScores;
+
+    protected ByteBuffer imgData = null;
+    private Interpreter tfLite;
+
     /**
-     * An immutable result returned by a Classifier describing what was recognized.
+     * Memory-map the model file in Assets.
      */
-    class Recognition {
-        /**
-         * A unique identifier for what has been recognized. Specific to the class, not the instance of
-         * the object.
-         */
-        private final String id;
-
-        /**
-         * Display name for the recognition.
-         */
-        private final String title;
-
-        /**
-         * A sortable score for how good the recognition is relative to others. Higher should be better.
-         */
-        private Byte confidence;
-
-        /** Optional location within the source image for the location of the recognized object. */
-        private RectF location;
-
-        private int color;
-
-        public Recognition(
-                final String id, final String title, final Byte confidence, final RectF location, final int color) {
-            this.id = id;
-            this.title = title;
-            this.confidence = confidence;
-            this.location = location;
-            this.color = color;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public String getTitle() {
-            return title;
-        }
-
-        public Byte getConfidence() {
-            return confidence;
-        }
-
-        public void setConfidence(Byte confidence) {
-            this.confidence = confidence;
-        }
-
-        public RectF getLocation() {
-            return location;
-        }
-
-        public int getColor() {
-            return this.color;
-        }
-
-        public void setColor(int color) {
-            this.color = color;
-        }
-
-        @Override
-        public String toString() {
-            String resultString = "";
-            if (id != null) {
-                resultString += "[" + id + "] ";
-            }
-
-            if (title != null) {
-                resultString += title + " ";
-            }
-
-            if (confidence != null) {
-                resultString += String.format("(%.1f%%) ", confidence * 100.0f);
-            }
-
-            if (location != null) {
-                resultString += location + " ";
-            }
-
-            return resultString.trim();
-        }
+    private static MappedByteBuffer loadModelFile(AssetManager assets, String modelFilename)
+            throws IOException {
+        AssetFileDescriptor fileDescriptor = assets.openFd(modelFilename);
+        FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
+        FileChannel fileChannel = inputStream.getChannel();
+        long startOffset = fileDescriptor.getStartOffset();
+        long declaredLength = fileDescriptor.getDeclaredLength();
+        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
     }
 
-    void recognizeImage(Bitmap bitmap);
+    /**
+     * Initializes a native TensorFlow session for classifying images.
+     *
+     * @param assetManager  The asset manager to be used to load assets.
+     * @param modelFilename The filepath of the model GraphDef protocol buffer.
+     */
+    public static Classifier create(
+            final AssetManager assetManager,
+            final String modelFilename,
+            final int inputSize) {
+        final Classifier d = new Classifier();
 
-    void enableStatLogging(final boolean debug);
 
-    String getStatString();
+        d.inputSize = inputSize;
 
-    void close();
+        try {
+            d.tfLite = new Interpreter(loadModelFile(assetManager, modelFilename));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // Pre-allocate buffers.
+        d.imgData =
+                ByteBuffer.allocateDirect(1 * d.inputSize * d.inputSize * 3 * 1);
+        d.imgData.order(ByteOrder.nativeOrder());
+        d.intValues = new int[d.inputSize * d.inputSize];
+        d.outputScores = new byte[1][NUM_DETECTIONS];
+        return d;
+    }
+
+    private Classifier() {
+    }
+
+    public void recognizeImage(final Bitmap bitmap) {
+        // Log this method so that it can be analyzed with systrace.
+        Trace.beginSection("recognizeImage");
+
+        Trace.beginSection("preprocessBitmap");
+        // Preprocess the image data from 0-255 int to normalized float based
+        // on the provided parameters.
+        bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+
+        imgData.rewind();
+        for (int i = 0; i < inputSize; ++i) {
+            for (int j = 0; j < inputSize; ++j) {
+                int pixelValue = intValues[i * inputSize + j];
+                imgData.put((byte) ((pixelValue >> 16) & 0xFF));
+                imgData.put((byte) ((pixelValue >> 8) & 0xFF));
+                imgData.put((byte) (pixelValue & 0xFF));
+            }
+        }
+        Trace.endSection(); // preprocessBitmap
+
+        // Copy the input data into TensorFlow.
+        Trace.beginSection("feed");
+        outputScores = new byte[1][NUM_DETECTIONS];
+
+        // Run the inference call.
+        Trace.beginSection("run");
+        tfLite.run(imgData, outputScores);
+        Trace.endSection();
+
+        Trace.endSection();
+
+        byte max = 0;
+        int maxIndex = 0;
+        for (int i = 0; i < MainActivity.NUM_RESULTS; i++) {
+            byte confidence = outputScores[0][i];
+            if (confidence > max) {
+                max = confidence;
+                maxIndex = i;
+            }
+        }
+
+        MainActivity.gearindex = maxIndex % 10;
+        MainActivity.confidence = max;
+        MainActivity.valid = maxIndex < 10;
+    }
 }
