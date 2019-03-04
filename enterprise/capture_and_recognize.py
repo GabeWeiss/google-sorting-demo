@@ -12,7 +12,7 @@ import urllib
 @contextlib.contextmanager
 def video_capture(video_device_index):
     video_device_name = '/dev/video{}'.format(video_device_index)
-    camera = cv.Camera(video_device_name)
+    camera = Camera(video_device_name)
     try:
         yield camera
     finally:
@@ -23,11 +23,11 @@ def capture(camera):
     try:
         image_bytes = camera.get_frame()
         return image_bytes
-    else:
+    except:
         raise ValueError('Failed to capture image.')
 
 
-def image_bytes_to_image(image_bytes):
+def image_bytes_to_image(image_bytes, width, height):
     image = Image.frombytes('RGB', (width, height), image_bytes, 'raw', 'RGB')
 
     return image
@@ -41,7 +41,8 @@ def recognize(engine, array):
 
 
 def format_results(label_scores):
-    data = json.dumps(recognition_results)
+    lss = [(int(l), float(s)) for l, s in label_scores]
+    data = json.dumps(lss)
 
     return data
 
@@ -62,15 +63,17 @@ def post(url, data):
 def main(args):
     engine = ClassificationEngine(args.model_file)
 
-    with video_capture(args.video_device_index) as cap:
+    with video_capture(args.video_device_index) as camera:
         while True:
             # The while loop go through the steps of capture, recognize, and post, along with data transformation steps.
             try:
-                image_bytes = capture(cap)
-                image = image_bytes_to_image(image_bytes)
+                image_bytes = capture(camera)
+                image = image_bytes_to_image(image_bytes, camera.width, camera.height)
                 label_scores = recognize(engine, image)
+                print(label_scores)
+                
                 data = format_results(label_scores)
-                response = post(args.server_url, data)
+                # response = post(args.server_url, data)
 
             except KeyboardInterrupt:
                 break
@@ -82,7 +85,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--model-file', default='edgetpu_model.tflite')
+    parser.add_argument('--model-file', default='edgetpu_model.tflite.2_27_2019')
     parser.add_argument('--server-url', default='192.168.42.100:8080')
     parser.add_argument('--video-device-index', default=1)
 
