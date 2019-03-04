@@ -53,8 +53,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.nnegrey.freeze_tag.R;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,6 +60,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
+import com.nnegrey.freeze_tag.R;
 
 @SuppressLint("ValidFragment")
 public class CameraConnectionFragment extends Fragment {
