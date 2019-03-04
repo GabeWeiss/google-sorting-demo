@@ -5,7 +5,10 @@ from PIL import Image
 camera = Camera('/dev/video1')
 width, height = camera.width, camera.height
 
-engine = ClassificationEngine('edgetpu_model.tflite')
+model_fn = 'edgetpu_model.tflite'
+model_fn = 'edgetpu_model.tflite.2_27_2019'
+
+engine = ClassificationEngine(model_fn)
 
 image_bytes = camera.get_frame()
 
