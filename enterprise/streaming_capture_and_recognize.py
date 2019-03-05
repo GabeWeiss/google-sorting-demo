@@ -8,6 +8,11 @@ import numpy as np
 import time
 from urllib import request
 
+from flask import Flask, Response
+import threading
+from collections import deque
+
+d = deque(maxlen=1)
 
 # Use a context manager to make sure the video device is released.
 @contextlib.contextmanager
@@ -69,18 +74,23 @@ def post(url, data):
         print('Failed to post to server {}: {}'.format(url, repr(e)))
 
 
-def main(args):
-    engine = ClassificationEngine(args.model_file)
+# worker running in a thread handling capture and recognize
+def worker(model_file, video_device_index, server_url, d):
+    engine = ClassificationEngine(model_file)
 
-    with video_capture(args.video_device_index) as camera:
+    with video_capture(video_device_index) as camera:
         while True:
             # The while loop go through the steps of capture, recognize, and post, along with data transformation steps.
             try:
                 image_bytes = capture(camera)
+                
+                # put the image to the deque
+
+                
                 image = image_bytes_to_image(image_bytes, camera.width, camera.height)
 
-                # save a jpeg for video feed
-                image.save('frame.jpeg')
+                # put the image to the deque
+                d.append(image_bytes)
 
                 label_scores, inference_time = recognize(engine, image)
                 if len(label_scores) == 0:
@@ -89,7 +99,7 @@ def main(args):
                 print(label_scores, inference_time)
                 
                 data = format_results(label_scores, inference_time)
-                response = post(args.server_url, data)
+                response = post(server_url, data)
                 print(response)
 
             except KeyboardInterrupt:
@@ -108,5 +118,11 @@ if __name__ == '__main__':
 
     args, _ = parser.parse_known_args()
 
-    main(args)
+    thread = threading.Thread(target=worker, args=(args.model_file, args.video_device_index, args.server_url, d))
+
+    thread.start()
+
+    thread.join()
+
+    
 
