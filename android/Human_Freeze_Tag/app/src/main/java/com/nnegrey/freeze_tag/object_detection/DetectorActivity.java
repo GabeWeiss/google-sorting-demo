@@ -29,12 +29,13 @@ import android.util.Size;
 import android.util.TypedValue;
 
 import com.nnegrey.freeze_tag.MainActivity;
-import com.nnegrey.freeze_tag.R;
 import com.nnegrey.freeze_tag.object_detection.OverlayView.DrawCallback;
 import com.nnegrey.freeze_tag.object_detection.env.BorderedText;
 import com.nnegrey.freeze_tag.object_detection.env.ImageUtils;
 
 import java.util.Vector;
+
+import com.nnegrey.freeze_tag.R;
 
 /**
  * An activity that uses a TensorFlowMultiBoxDetector and ObjectTracker to detect and then track
@@ -79,9 +80,6 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
 
         int cropSizex = MainActivity.TF_LITE_OBJECT_DETECTION_IMAGE_DIMENSION;
         int cropSizey = MainActivity.TF_LITE_OBJECT_DETECTION_IMAGE_DIMENSION;
-//
-//        int cropSizex = MainActivity.OBJECT_DETECTION_IMAGE_DIMENSION;
-//        int cropSizey = MainActivity.OBJECT_DETECTION_IMAGE_DIMENSION;
 
         previewWidth = size.getWidth();
         previewHeight = size.getHeight();
@@ -120,25 +118,12 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                         canvas.drawRect(r, paint);
                         borderedText.drawText(canvas, r.left, r.bottom * (h2 - h1), "Camera Detection Area");
 
-                        for (DetectedGear detectedGear : detectedSpheroBalls.values()) {
-                            if (detectedGear.isDetectedOnce()) {
-                                Classifier.Recognition recognition = detectedGear.getRecognition();
-                                paint.setColor(recognition.getColor());
-//                                canvas.drawRect((recognition.getLocation().left + DetectedGear.NORMALIZED_SHRINK_AMOUNT) * CANVAS_WIDTH,
-//                                        (recognition.getLocation().top + DetectedGear.NORMALIZED_SHRINK_AMOUNT ) * (h2 - h1) + h1,
-//                                        (recognition.getLocation().right - DetectedGear.NORMALIZED_SHRINK_AMOUNT) * CANVAS_WIDTH,
-//                                        (recognition.getLocation().bottom - DetectedGear.NORMALIZED_SHRINK_AMOUNT) * (h2 - h1) + h1,
-//                                        paint);
-//                                borderedText.drawText(canvas, (recognition.getLocation().left * CANVAS_WIDTH), recognition.getLocation().bottom * (h2 - h1) + h1, String.valueOf(recognition.getConfidence()));
-                                borderedText.drawText(canvas,
-                                        (recognition.getLocation().left * CANVAS_WIDTH),
-                                        recognition.getLocation().bottom * (h2 - h1) + h1,
-//                                        String.format("#: %d - C: %.2f", detectedGear.index, detectedGear.getRecognition().getConfidence()));
-                                        String.format("#: %d - C: %d", detectedGear.index, detectedGear.getRecognition().getConfidence()));
-//                            }
-                            }
-                        }
-//                        tracker.draw(canvas);
+                        // Get the
+                        borderedText.drawText(canvas, 0.25f, 0.75f * (h2 - h1) + h1,
+                                String.format("#: %d - C: %.2f - V: %b",
+                                        MainActivity.gearindex,
+                                        MainActivity.confidence,
+                                        MainActivity.valid));
                     }
                 });
 
@@ -179,7 +164,10 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                         lines.add("Frame: " + canvas2.getWidth() + "x" + canvas2.getHeight());
                         lines.add("Crop: " + copy.getWidth() + "x" + copy.getHeight());
                         lines.add("View: " + canvas.getWidth() + "x" + canvas.getHeight());
-                        lines.add("Mine: " + CANVAS_WIDTH + "x" + CANVAS_HEIGHT);
+                        lines.add(String.format("#: %d - C: %.2f - V: %b",
+                                MainActivity.gearindex,
+                                MainActivity.confidence,
+                                MainActivity.valid));
                         lines.add("Rotation: " + sensorOrientation);
                         lines.add("Inference time: " + lastProcessingTimeMs + "ms");
 
@@ -216,7 +204,7 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                     @Override
                     public void run() {
                         final long startTime = SystemClock.uptimeMillis();
-                        tfLiteObjectDetection.recognizeImage(croppedBitmap);
+                        classifier.recognizeImage(croppedBitmap);
                         lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
                         trackingOverlay.postInvalidate();
                         requestRender();
