@@ -39,4 +39,8 @@ dependencies {
     implementation group: 'me.panavtec', name: 'drawableview', version: '0.6.0'
     implementation 'org.tensorflow:tensorflow-lite:1.10.0'
     implementation 'org.tensorflow:tensorflow-android:1.11.0'
+
+    implementation 'com.google.firebase:firebase-core:16.0.1'
 }
+
+apply plugin: 'com.google.gms.google-services'
