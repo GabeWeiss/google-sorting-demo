@@ -12,6 +12,8 @@ from flask import Flask, Response
 import threading
 from collections import deque
 
+app = Flask(__name__)
+
 d = deque(maxlen=1)
 
 # Use a context manager to make sure the video device is released.
@@ -109,6 +111,40 @@ def worker(model_file, video_device_index, server_url, d):
                 break
 
 
+@app.route('/')
+def index():
+    return 'OK', 200
+
+
+def to_jpeg(image_bytes):
+    import io
+    bytes_buffer = io.BytesIO()
+
+    image = Image.frombytes('RGB', (640, 480), image_bytes, 'raw', 'RGB')
+    image.save(bytes_buffer, format='JPEG')
+    frame = bytes_buffer.getvalue()
+
+    return frame
+
+
+def gen():
+    global d
+    while True:
+        try:
+            image_bytes = d.popleft()
+            frame = to_jpeg(image_bytes)
+            # yield '{}\n'.format(len(frame))
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+        except:
+            pass
+
+@app.route('/video')
+def video():
+    return Response(gen(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
@@ -121,6 +157,8 @@ if __name__ == '__main__':
     thread = threading.Thread(target=worker, args=(args.model_file, args.video_device_index, args.server_url, d))
 
     thread.start()
+
+    app.run(host='0.0.0.0', debug=False)
 
     thread.join()
 
