@@ -1,5 +1,0 @@
-<resources>
-    <string name="app_name">Human Freeze Tag</string>
-    <string name="camera_error">This device doesn\'t support Camera2 API.</string>
-    <string name="game">Human Freeze Tag</string>
-</resources>
