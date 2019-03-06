@@ -1,4 +1,4 @@
-var lightThreshold = 3;
+var lightThreshold = 10;
 
 var ms_per_inference = 999999;
 
@@ -10,10 +10,31 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded());
 const http = require('http').Server(app);
-
+// io is for the port connections and notifications
 const io = require('socket.io')(http, {
     wsEngine: 'ws'
 });
+
+// Firestore initialization
+const firestore_admin = require('firebase-admin');
+var serviceAccount = require('./service_account.json');
+firestore_admin.initializeApp({
+    credential: firestore_admin.credential.cert(serviceAccount),
+    databaseURL: 'https://sorting-demo-230918.firebaseio.com'
+});
+var firestore_db = firestore_admin.firestore();
+// end Firestore initialization
+
+
+// Example of writing a document out to our telemetry collection
+/*
+var addDoc = firestore_db.collection('telemetry').add({
+    number: 1,
+    confidence: 0.72,
+    inference_time: 5,
+    timestamp: Date.now()
+});
+*/
 
 var lastpos = 1;
 io.on('connection', function(socket) {
@@ -57,22 +78,109 @@ app.get('/', function(req, res) {
     res.sendFile(__dirname + '/display.html');
 });
 
+// These variables were used in the bounding box detection
+// See note in code block below
+/*
 var targetX = 10;
 var targetY = 0;
 var lastDetected = 4;
+*/
 var lastSend = 0;
-app.post('/', function(req, res) {
-    console.log(req.body);
-    res.status(200).send({ ok: true });
-    var body = req.body;
-    var totalDiff = 999999999;
-    var best_guess = false;
 
-    ms_per_inference = body.ms_per_inference;
-    if(lastSend+200 < new Date().getTime()){
-        lastSend = new Date().getTime();
-        io.emit('speed', ms_per_inference);
+/*
+    Schema for EdgeTPU dev board output:
+        model output for number detected on puck
+        tens digit is the key for broken teeth or not
+            0 == no teeth broken
+            1 == one broken tooth
+            2 == two broken teeth
+    number: nn
+        confidence value from model on the number detected
+    confidence: nn.nnnnnnnn
+        inference time model took to give result in seconds
+    inference_time: nn.nnnnnnnnn
+*/
+
+var inferenceCount  = 0;
+var totalConfidence = 0;
+const INFERENCE_AVERAGE_COUNT = 5;
+const KEY_CONFIDENCE = "confidence";
+const KEY_HIT_COUNT  = "count";
+var counts           = {};
+var avgInferenceTime = 0;
+
+app.post('/', function(req, res) {
+    res.status(200).send({ ok: true });
+    
+    var body          = req.body;
+    var gearNumber    = body.number;
+    var confidence    = body.confidence;
+    avgInferenceTime += Math.round(body.inference_time * 1000);
+
+    if (inferenceCount < INFERENCE_AVERAGE_COUNT) {
+        ++inferenceCount;
+
+        if (!counts[gearNumber]) {
+            counts[gearNumber] = {};
+        }
+
+        counts[gearNumber][KEY_CONFIDENCE] = 
+            counts[gearNumber][KEY_CONFIDENCE] ? 
+                counts[gearNumber][KEY_CONFIDENCE] + confidence :
+                confidence;
+        counts[gearNumber][KEY_HIT_COUNT] = 
+            counts[gearNumber][KEY_HIT_COUNT] ?
+                counts[gearNumber][KEY_HIT_COUNT] + 1 :
+                1;
+        totalConfidence += confidence;
+        return;
     }
+
+    var leadNumber     = 0;
+    var leadConfidence = 0;
+    avgInferenceTime = avgInferenceTime / INFERENCE_AVERAGE_COUNT;
+
+    var keys = Object.keys(counts);
+    for (var i = 0; i < keys.length; ++i) {
+        var tmpNumber = keys[i];
+        var tmpConfidenceTotal = counts[tmpNumber][KEY_CONFIDENCE];
+        var tmpConfidenceEqualized = tmpConfidenceTotal / totalConfidence;
+
+        if (tmpConfidenceEqualized > leadConfidence) {
+            leadNumber = tmpNumber;
+            leadConfidence = tmpConfidenceEqualized;
+        }
+
+            // DEBUGGING for the knob to tune for the confidence results
+        console.log("REPORTING FOR " + tmpNumber);
+        console.log("Count for this number: " + counts[tmpNumber][KEY_HIT_COUNT]);
+        console.log("Normalized confidence: " + tmpConfidenceEqualized);
+        console.log("");
+    }
+    console.log("Total Confidence: " + totalConfidence);
+    console.log("\n\n\n");
+
+/*
+    console.log(body.number);
+    console.log(body.confidence);
+    console.log(Math.round(body.inference_time * 1000) + "ms");
+    console.log("");
+*/
+
+    var best_guess = leadNumber;
+
+    if(lastSend + 200 < new Date().getTime()){
+        lastSend = new Date().getTime();
+        io.emit('speed', avgInferenceTime);
+    }
+
+    // LEAVING IN
+    // this is code for detecting bounding box output. The logic will change
+    // because now we're dealing with JSON blog in the body, but we may still
+    // use some piece of this when we re-introduce bounding boxes when AutoML
+    // gets object detection
+/*
+    var totalDiff = 999999999;
     body.classes = body.classes.split('|');
     body.bounding_boxes = body.bounding_boxes.split('|');
     for (var i = 0; i < body.bounding_boxes.length; i++) {
@@ -83,9 +191,10 @@ app.post('/', function(req, res) {
              best_guess = body.classes[i];
         }
     }
-
-    console.log(best_guess);
+*/
+    console.log(is_ready);
     if (best_guess && is_ready && !is_running) {
+        console.log("I'm getting here?");
         is_running = true;
         var val = parseInt(best_guess)%10;
         if(val == 9){
@@ -99,6 +208,12 @@ app.post('/', function(req, res) {
             runAnimation(val);
         // }
     }
+
+        // reset our variables to be ready to start gathering the next 5
+    inferenceCount   = 0;
+    counts           = {};
+    totalConfidence  = 0;
+    avgInferenceTime = 0;
 });
 
 http.listen(port, function() {
@@ -128,7 +243,7 @@ function runAnimation(val) {
     // longestDelay = Math.max(expectedChuteDelay, expectedToChuteDelay);
     // servos["chute"].j5Obj.to(servos["chute"].positions[1]);
     // setTimeout(function() {
-        console.log(val);
+        // console.log(val);
         // console.log(servos[1].j5Obj);
         for (var i = 1; i <= 8; i++) {
             if (servos[i].j5Obj) {
@@ -233,7 +348,7 @@ async.parallel([
                 var sensor = new five.Light("A" + key);
                 if (key == 0) {
                 sensor.on("change", function() {
-                    // console.log(this.level);
+                    //console.log(this.value);
                     if (this.value > lightThreshold) {
                         is_ready = false;
                     } else {
