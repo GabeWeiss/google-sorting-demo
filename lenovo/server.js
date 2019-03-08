@@ -207,9 +207,9 @@ app.post('/', function(req, res) {
         }
     }
 */
-    console.log(is_ready);
+    //console.log(is_ready);
     if (best_guess && is_ready && !is_running) {
-        console.log("I'm getting here?");
+        //console.log("I'm getting here?");
         is_running = true;
         var val = parseInt(best_guess)%10;
         if(val == 9){
@@ -251,6 +251,7 @@ function runAnimation(val) {
     expectedChuteDelay = (Math.abs(parseInt(val)-currentPos)*100);
     expectedToChuteDelay = ((parseInt(val)-1)/7)*2000;
     bestDelay = Math.max(expectedChuteDelay-expectedToChuteDelay, 1)
+
     console.log('expectedChuteDelay: '+expectedChuteDelay);
     console.log('expectedToChuteDelay: '+expectedToChuteDelay);
     console.log('bestDelay: '+bestDelay);
