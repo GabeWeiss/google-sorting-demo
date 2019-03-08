@@ -16,23 +16,38 @@ const io = require('socket.io')(http, {
 });
 
 // Firestore initialization
-const firestore_admin = require('firebase-admin');
-var serviceAccount = require('./service_account.json');
-firestore_admin.initializeApp({
-    credential: firestore_admin.credential.cert(serviceAccount),
+const firestoreAdmin = require('firebase-admin');
+var telemetrySA = require('./service_account.json');
+var telemetryApp = firestoreAdmin.initializeApp({
+    credential: firestoreAdmin.credential.cert(telemetrySA),
     databaseURL: 'https://sorting-demo-230918.firebaseio.com'
-});
-var firestore_db = firestore_admin.firestore();
+}, "telemetry");
+var telemetryDB = telemetryApp.firestore();
 // end Firestore initialization
-
 
 // Example of writing a document out to our telemetry collection
 /*
-var addDoc = firestore_db.collection('telemetry').add({
+var addTelemetry = telemetryDB.collection('telemetry').add({
     number: 1,
     confidence: 0.72,
     inference_time: 5,
     timestamp: Date.now()
+});
+*/
+
+var statsSA = require('./next19-metrics-service-account.json');
+var statsApp = firestoreAdmin.initializeApp({
+    credential: firestoreAdmin.credential.cert(statsSA),
+    databaseURL: 'https://next19-metrics-test.firebaseio.com'
+}, "stats");
+var statsDB = statsApp.firestore();
+
+
+// Example of writing a document out to our stats collection
+/*
+var addStat = statsDB.collection('demos').doc("SortingDemo").collection('sessions').add({
+    start: firestoreAdmin.firestore.Timestamp.fromDate(new Date(Date.now())),
+    end: firestoreAdmin.firestore.Timestamp.fromDate(new Date(Date.now()))
 });
 */
 
