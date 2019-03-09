@@ -126,7 +126,6 @@ var avgInferenceTime = 0;
 
 app.post('/', function(req, res) {
     res.status(200).send({ ok: true });
-    
     var body          = req.body;
     var gearNumber    = body.number;
     var confidence    = body.confidence;
@@ -150,6 +149,13 @@ app.post('/', function(req, res) {
         totalConfidence += confidence;
         return;
     }
+
+    /*
+        For Next 2019, we're tracking some stats on how often the app gets
+        run. The schema wants a start and end time. This demo happens VERY
+        fast, but I'll dutifully record a start and end time anway.
+    */
+    var demoStartTime = Date.now();
 
     var leadNumber     = 0;
     var leadConfidence = 0;
@@ -182,8 +188,6 @@ app.post('/', function(req, res) {
     console.log("");
 */
 
-    var best_guess = leadNumber;
-
     if(lastSend + 200 < new Date().getTime()){
         lastSend = new Date().getTime();
         io.emit('speed', avgInferenceTime);
@@ -201,17 +205,17 @@ app.post('/', function(req, res) {
     for (var i = 0; i < body.bounding_boxes.length; i++) {
         body.bounding_boxes[i] = body.bounding_boxes[i].split(',');
         var diff = (Math.abs(body.bounding_boxes[i][0] - targetX) + Math.abs(body.bounding_boxes[i][1] - targetY));
-        if ((!best_guess || diff < totalDiff) && (body.bounding_boxes[i][0] < 125)) {
+        if ((!leadNumber || diff < totalDiff) && (body.bounding_boxes[i][0] < 125)) {
             totalDiff = diff;
-             best_guess = body.classes[i];
+             leadNumber = body.classes[i];
         }
     }
 */
     //console.log(is_ready);
-    if (best_guess && is_ready && !is_running) {
+    if (leadNumber && is_ready && !is_running) {
         //console.log("I'm getting here?");
         is_running = true;
-        var val = parseInt(best_guess)%10;
+        var val = parseInt(leadNumber)%10;
         if(val == 9){
             val = 6;
         }
@@ -229,6 +233,67 @@ app.post('/', function(req, res) {
     counts           = {};
     totalConfidence  = 0;
     avgInferenceTime = 0;
+
+        // send the data off to the stats server
+    var addStat = statsDB.collection('demos').doc("SortingDemo").collection('sessions').add({
+        start: firestoreAdmin.firestore.Timestamp.fromDate(new Date(demoStartTime)),
+        end: firestoreAdmin.firestore.Timestamp.fromDate(new Date(Date.now()))
+    });
+
+    // send the telemetry for what chute was hit
+    var liveTelemetryDoc = "chutes-test";
+    var liveRef = telemetryDB.collection("telemetry-live-count").doc(liveTelemetryDoc);
+    var telemetryTransaction = telemetryDB.runTransaction(t => {
+        return t.get(liveRef)
+            .then(doc => {
+                // increment the appropriate value
+                var docData = doc.data();
+                /*
+                    TODO: Add in logic around defective gears once we have
+                    that working. Until then, we're going to just consider
+                    numbers written because we don't have that chunk in yet.
+                    Once it is, then that may circumvent this switch statement
+                */
+                switch(leadNumber) {
+                    case 1:
+                        var newVal = docData.one + 1;
+                        t.update(liveRef, {one: newVal});
+                        break;
+                    case 2:
+                        var newVal = docData.two + 1;
+                        t.update(liveRef, {two: newVal});
+                        break;
+                    case 3:
+                        var newVal = docData.three + 1;
+                        t.update(liveRef, {three: newVal});
+                        break;
+                    case 4:
+                        var newVal = docData.four + 1;
+                        t.update(liveRef, {four: newVal});
+                        break;
+                    case 5:
+                        var newVal = docData.five + 1;
+                        t.update(liveRef, {five: newVal});
+                        break;
+                    case 6:
+                        var newVal = docData.six + 1;
+                        t.update(liveRef, {six: newVal});
+                        break;
+                    case 7:
+                        var newVal = docData.seven + 1;
+                        t.update(liveRef, {seven: newVal});
+                        break;
+                    default:
+                        var newVal = docData.X + 1;
+                        t.update(liveRef, {X: newVal});
+                        break;
+                }
+            });
+    }).then(result => {
+        console.log('Updated telemetry');
+    }).catch(err => {
+        console.log('Telemetry database update failed');
+    });
 });
 
 http.listen(port, function() {
