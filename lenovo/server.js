@@ -228,6 +228,12 @@ app.post('/', function(req, res) {
         // }
     }
 
+        // to avoid re-entrancy problems with new values coming in for the "lead"
+        // numbers in the loop before the telemetry can finish sending.
+    var telemetryNumber = leadNumber;
+    var telemetryConfidence = leadConfidence;
+    var telemetryInference = avgInferenceTime;
+
         // reset our variables to be ready to start gathering the next 5
     inferenceCount   = 0;
     counts           = {};
@@ -241,8 +247,20 @@ app.post('/', function(req, res) {
     });
 
     // send the telemetry for what chute was hit
+    var longTermCollectionName = "next2019-test";
+    var longTermTelemetryDoc = telemetryDB.collection("telemetry-long-term")
+                                          .doc("events")
+                                          .collection(longTermCollectionName);
+    var addTelemetry = longTermTelemetryDoc.add({
+        number: telemetryNumber,
+        confidence: telemetryConfidence,
+        inference_time: telemetryInference,
+        timestamp: Date.now()
+    });
+
     var liveTelemetryDoc = "chutes-test";
-    var liveRef = telemetryDB.collection("telemetry-live-count").doc(liveTelemetryDoc);
+    var liveRef = telemetryDB.collection("telemetry-live-count")
+                             .doc(liveTelemetryDoc);
     var telemetryTransaction = telemetryDB.runTransaction(t => {
         return t.get(liveRef)
             .then(doc => {
@@ -254,7 +272,7 @@ app.post('/', function(req, res) {
                     numbers written because we don't have that chunk in yet.
                     Once it is, then that may circumvent this switch statement
                 */
-                switch(leadNumber) {
+                switch(telemetryNumber) {
                     case 1:
                         var newVal = docData.one + 1;
                         t.update(liveRef, {one: newVal});
