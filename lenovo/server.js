@@ -112,9 +112,7 @@ app.get('/', function(req, res) {
 /*
 var targetX = 10;
 var targetY = 0;
-var lastDetected = 4;
 */
-var lastSend = 0;
 
 /*
     Schema for EdgeTPU dev board output:
@@ -182,7 +180,7 @@ app.post('/', function(req, res) {
         var tmpConfidenceEqualized = tmpConfidenceTotal / totalConfidence;
 
         if (tmpConfidenceEqualized > leadConfidence) {
-            leadNumber = tmpNumber;
+            leadNumber = Number(tmpNumber);
             leadConfidence = tmpConfidenceEqualized;
         }
 
@@ -194,18 +192,6 @@ app.post('/', function(req, res) {
     }
     console.log("Total Confidence: " + totalConfidence);
     console.log("\n\n\n");
-
-/*
-    console.log(body.number);
-    console.log(body.confidence);
-    console.log(Math.round(body.inference_time * 1000) + "ms");
-    console.log("");
-*/
-
-    if(lastSend + 200 < new Date().getTime()){
-        lastSend = new Date().getTime();
-        io.emit('speed', avgInferenceTime);
-    }
 
     // LEAVING IN
     // this is code for detecting bounding box output. The logic will change
@@ -266,8 +252,12 @@ app.post('/', function(req, res) {
         });
 
         var liveTelemetryDoc = "chutes-test";
+        var liveInferenceDoc = "live-inference";
         var liveRef = telemetryDB.collection("telemetry-live-count")
-                                .doc(liveTelemetryDoc);
+                                 .doc(liveTelemetryDoc);
+        var liveInferenceRef = telemetryDB.collection("telemetry-live-count")
+                                          .doc(liveInferenceDoc);
+        liveInferenceRef.update({time: telemetryInference});
         var telemetryTransaction = telemetryDB.runTransaction(t => {
             return t.get(liveRef)
                 .then(doc => {
