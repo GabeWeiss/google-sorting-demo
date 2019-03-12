@@ -240,92 +240,100 @@ app.post('/', function(req, res) {
             // lastDetected = val;
             runAnimation(val);
         // }
+
+            // to avoid re-entrancy problems with new values coming in for the "lead"
+            // numbers in the loop before the telemetry can finish sending.
+        var telemetryNumber = leadNumber;
+        var telemetryConfidence = leadConfidence;
+        var telemetryInference = avgInferenceTime;
+
+            // send the data off to the stats server
+        var addStat = statsDB.collection('demos').doc("SortingDemo").collection('sessions').add({
+            start: firestoreAdmin.firestore.Timestamp.fromDate(new Date(demoStartTime)),
+            end: firestoreAdmin.firestore.Timestamp.fromDate(new Date(Date.now()))
+        });
+
+        // send the telemetry for what chute was hit
+        var longTermCollectionName = "next2019-test";
+        var longTermTelemetryDoc = telemetryDB.collection("telemetry-long-term")
+                                            .doc("events")
+                                            .collection(longTermCollectionName);
+        var addTelemetry = longTermTelemetryDoc.add({
+            number: telemetryNumber,
+            confidence: telemetryConfidence,
+            inference_time: telemetryInference,
+            timestamp: Date.now()
+        });
+
+        var liveTelemetryDoc = "chutes-test";
+        var liveRef = telemetryDB.collection("telemetry-live-count")
+                                .doc(liveTelemetryDoc);
+        var telemetryTransaction = telemetryDB.runTransaction(t => {
+            return t.get(liveRef)
+                .then(doc => {
+                    // increment the appropriate value
+                    var docData = doc.data();
+                    /*
+                        TODO: Add in logic around defective gears once we have
+                        that working. Until then, we're going to just consider
+                        numbers written because we don't have that chunk in yet.
+                        Once it is, then that may circumvent this switch statement
+                    */
+                    switch(telemetryNumber) {
+                        case 1:
+                            var newVal = docData.one + 1;
+                            t.update(liveRef, {one: newVal});
+                            break;
+                        case 2:
+                            var newVal = docData.two + 1;
+                            t.update(liveRef, {two: newVal});
+                            break;
+                        case 3:
+                            var newVal = docData.three + 1;
+                            t.update(liveRef, {three: newVal});
+                            break;
+                        case 4:
+                            var newVal = docData.four + 1;
+                            t.update(liveRef, {four: newVal});
+                            break;
+                        case 5:
+                            var newVal = docData.five + 1;
+                            t.update(liveRef, {five: newVal});
+                            break;
+                        case 6:
+                            var newVal = docData.six + 1;
+                            t.update(liveRef, {six: newVal});
+                            break;
+                        case 7:
+                            var newVal = docData.seven + 1;
+                            t.update(liveRef, {seven: newVal});
+                            break;
+                        default:
+                            var newVal = docData.X + 1;
+                            t.update(liveRef, {X: newVal});
+                            break;
+                    }
+                });
+        }).then(result => {
+            console.log('Updated telemetry');
+        }).catch(err => {
+            console.log('Telemetry database update failed');
+        });
+    }
+    else if (is_running) {
+        // TODO: There's a bug here, if we get a post event, but we're
+        // running, it means we haven't reset yet but we have post events
+        // coming in and we probably need to handle them? Maybe? This might
+        // be the bug on why we're stalling and not continuing until we
+        // jiggle the puck
+        console.log("I'm ready to go, and got some inferences in, but the demo is running still.");
     }
 
-        // to avoid re-entrancy problems with new values coming in for the "lead"
-        // numbers in the loop before the telemetry can finish sending.
-    var telemetryNumber = leadNumber;
-    var telemetryConfidence = leadConfidence;
-    var telemetryInference = avgInferenceTime;
-
-        // reset our variables to be ready to start gathering the next 5
+    // reset our variables to be ready to start gathering the next 5
     inferenceCount   = 0;
     counts           = {};
     totalConfidence  = 0;
     avgInferenceTime = 0;
-
-        // send the data off to the stats server
-    var addStat = statsDB.collection('demos').doc("SortingDemo").collection('sessions').add({
-        start: firestoreAdmin.firestore.Timestamp.fromDate(new Date(demoStartTime)),
-        end: firestoreAdmin.firestore.Timestamp.fromDate(new Date(Date.now()))
-    });
-
-    // send the telemetry for what chute was hit
-    var longTermCollectionName = "next2019-test";
-    var longTermTelemetryDoc = telemetryDB.collection("telemetry-long-term")
-                                          .doc("events")
-                                          .collection(longTermCollectionName);
-    var addTelemetry = longTermTelemetryDoc.add({
-        number: telemetryNumber,
-        confidence: telemetryConfidence,
-        inference_time: telemetryInference,
-        timestamp: Date.now()
-    });
-
-    var liveTelemetryDoc = "chutes-test";
-    var liveRef = telemetryDB.collection("telemetry-live-count")
-                             .doc(liveTelemetryDoc);
-    var telemetryTransaction = telemetryDB.runTransaction(t => {
-        return t.get(liveRef)
-            .then(doc => {
-                // increment the appropriate value
-                var docData = doc.data();
-                /*
-                    TODO: Add in logic around defective gears once we have
-                    that working. Until then, we're going to just consider
-                    numbers written because we don't have that chunk in yet.
-                    Once it is, then that may circumvent this switch statement
-                */
-                switch(telemetryNumber) {
-                    case 1:
-                        var newVal = docData.one + 1;
-                        t.update(liveRef, {one: newVal});
-                        break;
-                    case 2:
-                        var newVal = docData.two + 1;
-                        t.update(liveRef, {two: newVal});
-                        break;
-                    case 3:
-                        var newVal = docData.three + 1;
-                        t.update(liveRef, {three: newVal});
-                        break;
-                    case 4:
-                        var newVal = docData.four + 1;
-                        t.update(liveRef, {four: newVal});
-                        break;
-                    case 5:
-                        var newVal = docData.five + 1;
-                        t.update(liveRef, {five: newVal});
-                        break;
-                    case 6:
-                        var newVal = docData.six + 1;
-                        t.update(liveRef, {six: newVal});
-                        break;
-                    case 7:
-                        var newVal = docData.seven + 1;
-                        t.update(liveRef, {seven: newVal});
-                        break;
-                    default:
-                        var newVal = docData.X + 1;
-                        t.update(liveRef, {X: newVal});
-                        break;
-                }
-            });
-    }).then(result => {
-        console.log('Updated telemetry');
-    }).catch(err => {
-        console.log('Telemetry database update failed');
-    });
 });
 
 http.listen(port, function() {
