@@ -8,13 +8,9 @@ import numpy as np
 import time
 from urllib import request
 
-from flask import Flask, Response
+import socket
 import threading
-from collections import deque
 
-app = Flask(__name__)
-
-d = deque(maxlen=1)
 
 # Use a context manager to make sure the video device is released.
 @contextlib.contextmanager
@@ -85,22 +81,26 @@ def post(url, data):
 
 
 # worker running in a thread handling capture and recognize
-def worker(model_file, video_device_index, server_url, d):
+def worker(model_file, video_device_index, server_url, socket_host, socket_port):
     engine = ClassificationEngine(model_file)
 
-    with video_capture(video_device_index) as camera:
+    with video_capture(video_device_index) as camera, socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.connect((socket_host, socket_port))
+        except:
+            print('Cannot connect to socket.')
+
         while True:
             # The while loop go through the steps of capture, recognize, and post, along with data transformation steps.
             try:
                 image_bytes = capture(camera)
                 
-                # put the image to the deque
+                try:
+                    s.send(image_bytes)
+                except:
+                    pass
 
-                
                 image = image_bytes_to_image(image_bytes, camera.width, camera.height)
-
-                # put the image to the deque
-                d.append(image_bytes)
 
                 label_scores, inference_time = recognize(engine, image)
                 if len(label_scores) == 0:
@@ -119,11 +119,6 @@ def worker(model_file, video_device_index, server_url, d):
                 break
 
 
-@app.route('/')
-def index():
-    return 'OK', 200
-
-
 def to_jpeg(image_bytes):
     import io
     bytes_buffer = io.BytesIO()
@@ -135,43 +130,20 @@ def to_jpeg(image_bytes):
     return frame
 
 
-def gen():
-    global d
-    while True:
-        try:
-            image_bytes = d.popleft()
-            frame = to_jpeg(image_bytes)
-            # yield '{}\n'.format(len(frame))
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
-        except:
-            pass
-
-@app.route('/video')
-def video():
-    return Response(gen(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--model-file', default='edgetpu_model.tflite.3_7_2019')
     parser.add_argument('--server-url', default='http://192.168.42.100:8080')
+    parser.add_argument('--socket-host', default='192.168.42.100')
     parser.add_argument('--socket-port', default=54321)
     parser.add_argument('--video-device-index', default=1)
     parser.add_argument('--debug', action='store_true')
 
     args, _ = parser.parse_known_args()
 
-    thread = threading.Thread(target=worker, args=(args.model_file, args.video_device_index, args.server_url, d))
+    thread = threading.Thread(target=worker, args=(args.model_file, args.video_device_index, args.server_url, args.socket_host, args.socket_port))
 
     thread.start()
 
-    if not args.debug:
-        app.run(host='0.0.0.0', debug=False)
-
     thread.join()
-
-    
-
