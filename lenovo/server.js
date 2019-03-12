@@ -266,8 +266,12 @@ app.post('/', function(req, res) {
         });
 
         var liveTelemetryDoc = "chutes-test";
+        var liveInferenceDoc = "live-inference";
         var liveRef = telemetryDB.collection("telemetry-live-count")
-                                .doc(liveTelemetryDoc);
+                                 .doc(liveTelemetryDoc);
+        var liveInferenceRef = telemetryDB.collection("telemetry-live-count")
+                                          .doc(liveInferenceDoc);
+        liveInferenceRef.update({time: telemetryInference});
         var telemetryTransaction = telemetryDB.runTransaction(t => {
             return t.get(liveRef)
                 .then(doc => {
