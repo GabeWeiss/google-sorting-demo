@@ -37,6 +37,14 @@ def capture(camera):
 
 def image_bytes_to_image(image_bytes, width, height):
     image = Image.frombytes('RGB', (width, height), image_bytes, 'raw', 'RGB')
+    
+    side = 224
+    top = (height - side) / 2 + 20
+    left = (width - side) / 2 + 50
+    bottom = top + side
+    right = left + side
+
+    image = image.crop((left, top, right, bottom))
 
     return image
 
@@ -148,9 +156,11 @@ def video():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--model-file', default='edgetpu_model.tflite.2_27_2019')
+    parser.add_argument('--model-file', default='edgetpu_model.tflite.3_7_2019')
     parser.add_argument('--server-url', default='http://192.168.42.100:8080')
+    parser.add_argument('--socket-port', default=54321)
     parser.add_argument('--video-device-index', default=1)
+    parser.add_argument('--debug', action='store_true')
 
     args, _ = parser.parse_known_args()
 
@@ -158,7 +168,8 @@ if __name__ == '__main__':
 
     thread.start()
 
-    app.run(host='0.0.0.0', debug=False)
+    if not args.debug:
+        app.run(host='0.0.0.0', debug=False)
 
     thread.join()
 
