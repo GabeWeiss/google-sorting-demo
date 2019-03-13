@@ -3,7 +3,7 @@ from PyV4L2Camera.camera import Camera
 camera = Camera('/dev/video1')
 
 counter = 0
-outpath = 'ibs/image_bytes_{}.txt'
+outpath = 'bad/image_bytes_{}.txt'
 
 while True:
     try:
