@@ -46,11 +46,7 @@ COPY --from=opencv-python \
 COPY --from=opencv-python \
     /install/lib/ /usr/local/lib/
 ENV LD_LIBRARY_PATH /usr/local/lib64:/usr/local/lib
-ENV PYTHONPATH /usr/local/lib/python3.6/site-packages:/tmp/iot-edge-sdk-linux-python
-RUN [ "cross-build-start" ]
-COPY google_cloud_edge-0.8-py2.py3-none-any.whl /tmp/
-RUN python3 -m pip install /tmp/google_cloud_edge-0.8-py2.py3-none-any.whl
-RUN [ "cross-build-end" ]
 WORKDIR /app
 COPY capture.py /app/
 ENTRYPOINT ["/usr/bin/python3", "/app/capture.py"]
+
