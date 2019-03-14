@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 FROM resin/aarch64-alpine as opencv-python
+
 RUN [ "cross-build-start" ]
 RUN apk --update add --virtual build-deps python3 python3-dev py3-numpy py-numpy-dev curl cmake build-base ninja zlib-dev linux-headers
 RUN curl -L https://github.com/opencv/opencv/archive/3.4.3.tar.gz | tar xvz
@@ -37,15 +39,20 @@ RUN ninja -j28
 RUN ninja install
 RUN find /install
 RUN [ "cross-build-end" ]
+
 FROM resin/aarch64-alpine
+
 RUN [ "cross-build-start" ]
 RUN apk --update --no-cache add python3 py3-numpy py3-paho-mqtt libstdc++
 RUN [ "cross-build-end" ]
+
 COPY --from=opencv-python \
      /install/lib64/ /usr/local/lib64/
 COPY --from=opencv-python \
     /install/lib/ /usr/local/lib/
 ENV LD_LIBRARY_PATH /usr/local/lib64:/usr/local/lib
+ENV PYTHONPATH /usr/local/lib/python3.6/site-packages
+
 WORKDIR /app
 COPY capture.py /app/
 ENTRYPOINT ["/usr/bin/python3", "/app/capture.py"]
