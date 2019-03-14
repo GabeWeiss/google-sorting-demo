@@ -14,7 +14,8 @@
 import time
 import cv2
 import argparse
-from paho.mqtt import client as mqtt_client
+import os
+from paho.mqtt import client as mqtt
 
 BROKER_HOSTNAME = os.getenv('X_GOOGLE_BROKER_HOSTNAME', 'localhost')
 BROKER_PORT = int(os.getenv('X_GOOGLE_BROKER_PORT', '1883'))
@@ -36,7 +37,7 @@ def main(args):
     cap = cv2.VideoCapture(args.video)
     cap.set(CV_CAP_PROP_FRAME_WIDTH, CAP_WIDTH)
     cap.set(CV_CAP_PROP_FRAME_HEIGHT, CAP_HEIGHT)
-    cap.set(cv.CAP_PROP_FPS, CAPTURE_FPS)
+    cap.set(cv2.CAP_PROP_FPS, CAPTURE_FPS)
 
     mqttc = mqtt.Client()
     mqttc.connect(BROKER_HOSTNAME, BROKER_PORT)
