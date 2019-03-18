@@ -257,7 +257,8 @@ app.post('/', function(req, res) {
                                  .doc(liveTelemetryDoc);
         var liveInferenceRef = telemetryDB.collection("telemetry-live-count")
                                           .doc(liveInferenceDoc);
-        liveInferenceRef.update({time: telemetryInference});
+        liveInferenceRef.update({time: telemetryInference,
+                                 number: telemetryNumber});
         var telemetryTransaction = telemetryDB.runTransaction(t => {
             return t.get(liveRef)
                 .then(doc => {

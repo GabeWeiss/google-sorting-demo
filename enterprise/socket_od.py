@@ -2,6 +2,7 @@ import argparse
 import contextlib
 from PyV4L2Camera.camera import Camera
 from PIL import Image
+from edgetpu.detection.engine import DetectionEngine
 from edgetpu.classification.engine import ClassificationEngine
 import json
 import numpy as np
@@ -45,11 +46,32 @@ def image_bytes_to_image(image_bytes, width, height):
     return image
 
 
-def recognize(engine, image):
+def recognize(od_engine, digit_engine, image):
     # ClassifyWithImage returns a list of top_k pairs of (class_label: int, confidence_score: float) whose confidence_scores are greater than threshold.
+
     start_time = time.time()
-    label_scores = engine.ClassifyWithImage(image, threshold=0.5, top_k=3)
-    inference_time = time.time() - start_time
+    digit_label_scores = digit_engine.ClassifyWithImage(image, threshold=0.5, top_k=3)
+    digit_inference_time = time.time() - start_time
+    
+    # Short circuit if no digit is detected
+    if len(digit_label_scores) == 0:
+        return [], digit_inference_time
+
+    start_time = time.time()
+    candidates = od_engine.DetectWithImage(image, threshold=0.5, top_k=5)
+    od_inference_time = time.time() - start_time
+
+    inference_time = od_inference_time + digit_inference_time
+
+    # label_id 1: gear
+    # label_id 0: missing
+    missing = [candidate for candidate in candidates if candidate.label_id == 0]
+
+    print('{} missing teeth detected'.format(len(missing)))
+    n_missing = min(len(missing), 2)
+    
+    # TODO: use the scores and bounding boxes in candidates
+    label_scores = [(10*n_missing + digit_label_scores[0][0], digit_label_scores[0][1])]
 
     return label_scores, inference_time
 
@@ -81,8 +103,9 @@ def post(url, data):
 
 
 # worker running in a thread handling capture and recognize
-def worker(model_file, video_device_index, server_url, socket_host, socket_port):
-    engine = ClassificationEngine(model_file)
+def worker(od_model_file, digit_model_file, video_device_index, server_url, socket_host, socket_port):
+    od_engine = DetectionEngine(od_model_file)
+    digit_engine = ClassificationEngine(digit_model_file)
 
     with video_capture(video_device_index) as camera, socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
@@ -102,7 +125,7 @@ def worker(model_file, video_device_index, server_url, socket_host, socket_port)
 
                 image = image_bytes_to_image(image_bytes, camera.width, camera.height)
 
-                label_scores, inference_time = recognize(engine, image)
+                label_scores, inference_time = recognize(od_engine, digit_engine, image)
                 if len(label_scores) == 0:
                     continue
 
@@ -133,7 +156,8 @@ def to_jpeg(image_bytes):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--model-file', default='edgetpu_model.tflite.3_7_2019')
+    parser.add_argument('--od-model-file', default='models/model_od.tflite.3_12_2019')
+    parser.add_argument('--digit-model-file', default='models/model_digit_ha.tflite.3_7_2019')
     parser.add_argument('--server-url', default='http://192.168.42.100:8080')
     parser.add_argument('--socket-host', default='192.168.42.100')
     parser.add_argument('--socket-port', default=54321)
@@ -142,7 +166,7 @@ if __name__ == '__main__':
 
     args, _ = parser.parse_known_args()
 
-    thread = threading.Thread(target=worker, args=(args.model_file, args.video_device_index, args.server_url, args.socket_host, args.socket_port))
+    thread = threading.Thread(target=worker, args=(args.od_model_file, args.digit_model_file, args.video_device_index, args.server_url, args.socket_host, args.socket_port))
 
     thread.start()
 
