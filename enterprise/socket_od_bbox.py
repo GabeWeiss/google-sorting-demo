@@ -56,7 +56,7 @@ def recognize(od_engine, digit_engine, image):
     
     # Short circuit if no digit is detected
     if len(digit_label_scores) == 0:
-        return [], digit_inference_time
+        return [], digit_inference_time, [(0.0,)*5]*2
 
     start_time = time.time()
     candidates = od_engine.DetectWithImage(image, threshold=0.5, top_k=5)
@@ -75,8 +75,14 @@ def recognize(od_engine, digit_engine, image):
     label_scores = [(10*n_missing + digit_label_scores[0][0], digit_label_scores[0][1])]
 
     # return also bounding boxes and scores (up to 2) with padding so that bbox_scores is always a list of length 2.
-    bbox_scores = [(c.x1, c.y1, c.x2, c.y2, c.score) for c in missing[:n_missing]] + [(0.0)*5] * (2-n_missing)
-
+    bbox_scores = []
+    for c in missing[:n_missing]:
+        (x1, y1), (x2, y2) = c.bounding_box
+        score = c.score
+        bbox_scores.append((x1, y1, x2, y2, score))
+    # padding
+    bbox_scores.extend([(0.0,)*5]*(2-len(bbox_scores)))
+    
     return label_scores, inference_time, bbox_scores
 
 
@@ -128,10 +134,10 @@ def worker(od_model_file, digit_model_file, video_device_index, server_url, sock
 
                 # format bbox_scores into 2*5*8 bytes and add to image_bytes
 
-                data_bytes = b''
+                bbox_bytes = b''
                 for bbox_score in bbox_scores:
                     for f in bbox_score:
-                        data_bytes += struct.pack('!d', f)
+                        bbox_bytes += struct.pack('!d', f)
 
                 data_bytes = image_bytes + bbox_bytes
 
@@ -154,7 +160,7 @@ def worker(od_model_file, digit_model_file, video_device_index, server_url, sock
                 break
             except Exception as e:
                 print(repr(e))
-                break
+                import ipdb; ipdb.set_trace()
 
 
 def to_jpeg(image_bytes):
