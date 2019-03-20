@@ -215,12 +215,20 @@ app.post('/', function(req, res) {
     if (leadNumber && is_ready && !is_running) {
         //console.log("I'm getting here?");
         is_running = true;
-        var val = parseInt(leadNumber)%10;
-        if(val == 9){
-            val = 6;
-        }
-        if (val < 1 || val > 7) {
+
+        // if our leading digit isn't a 0, it means we have broken teeth, so don't
+        // bother parsing the number at all, it doesn't matter.
+        if (leadNumber.length > 0 && leadNumber.charAt(0) != "0") {
             val = 8;
+        }
+        else {
+            var val = parseInt(leadNumber)%10;
+            if(val == 9){
+                val = 6;
+            }
+            if (val < 1 || val > 7) {
+                val = 8;
+            }
         }
         // if (lastDetected != val) {
             // lastDetected = val;
