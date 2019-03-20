@@ -171,6 +171,7 @@ app.post('/', function(req, res) {
 
     var leadNumber     = 0;
     var leadConfidence = 0;
+    var brokenTooth    = false;
     avgInferenceTime = avgInferenceTime / INFERENCE_AVERAGE_COUNT;
 
     var keys = Object.keys(counts);
@@ -180,6 +181,12 @@ app.post('/', function(req, res) {
         var tmpConfidenceEqualized = tmpConfidenceTotal / totalConfidence;
 
         if (tmpConfidenceEqualized > leadConfidence) {
+            if (tmpNumber.length > 0 && tmpNumber.charAt(0) != "0") {
+                brokenTooth = true;
+            }
+            else {
+                brokenTooth = false;
+            }
             leadNumber = Number(tmpNumber);
             leadConfidence = tmpConfidenceEqualized;
         }
@@ -218,7 +225,7 @@ app.post('/', function(req, res) {
 
         // if our leading digit isn't a 0, it means we have broken teeth, so don't
         // bother parsing the number at all, it doesn't matter.
-        if (leadNumber.length > 0 && leadNumber.charAt(0) != "0") {
+        if (brokenTooth) {
             val = 8;
         }
         else {
@@ -230,10 +237,8 @@ app.post('/', function(req, res) {
                 val = 8;
             }
         }
-        // if (lastDetected != val) {
-            // lastDetected = val;
-            runAnimation(val);
-        // }
+
+        runAnimation(val);
 
             // to avoid re-entrancy problems with new values coming in for the "lead"
             // numbers in the loop before the telemetry can finish sending.
