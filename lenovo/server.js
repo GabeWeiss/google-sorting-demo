@@ -470,8 +470,14 @@ async.parallel([
                 sensor.on("change", function() {
                     //console.log(this.value);
                     if (this.value > lightThreshold) {
+                        if (is_ready == true) {
+                            console.log("Changing ready value from false to true");
+                        }
                         is_ready = false;
                     } else {
+                        if (is_ready == false) {
+                            console.log("Changing ready value from true to false");
+                        }
                         is_ready = true;
                     }
                 });
