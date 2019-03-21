@@ -51,7 +51,7 @@ def recognize(od_engine, digit_engine, image):
     # ClassifyWithImage returns a list of top_k pairs of (class_label: int, confidence_score: float) whose confidence_scores are greater than threshold.
 
     start_time = time.time()
-    digit_label_scores = digit_engine.ClassifyWithImage(image, threshold=0.5, top_k=3)
+    digit_label_scores = digit_engine.ClassifyWithImage(image, threshold=0.35, top_k=3)
     digit_inference_time = time.time() - start_time
     
     # Short circuit if no digit is detected
@@ -90,7 +90,7 @@ def format_results(label_scores, inference_time):
     # keeping only the top result
     label, score = label_scores[0]
     data_dict = {
-        'number': int(label),
+            'number': '{:02d}'.format(int(label)),
         'confidence': float(score),
         'inference_time': float(inference_time)
     }
