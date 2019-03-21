@@ -214,7 +214,7 @@ app.post('/', function(req, res) {
         }
         else {
             var val = parseInt(leadNumber)%10;
-            if (val == nil){
+            if (val == null){
                 val = 8;
             }
             else if(val == 9){
