@@ -184,11 +184,15 @@ if __name__ == '__main__':
     parser.add_argument('--socket-port', default=54321)
     parser.add_argument('--video-device-index', default=1)
     parser.add_argument('--debug', action='store_true')
+    parser.add_argument('--thread', action='store_true', default=False)
 
     args, _ = parser.parse_known_args()
 
-    thread = threading.Thread(target=worker, args=(args.od_model_file, args.digit_model_file, args.video_device_index, args.server_url, args.socket_host, args.socket_port))
+    if args.thread:
+        thread = threading.Thread(target=worker, args=(args.od_model_file, args.digit_model_file, args.video_device_index, args.server_url, args.socket_host, args.socket_port))
 
-    thread.start()
+        thread.start()
 
-    thread.join()
+        thread.join()
+    else:
+        worker(args.od_model_file, args.digit_model_file, args.video_device_index, args.server_url, args.socket_host, args.socket_port)
