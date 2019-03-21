@@ -34,7 +34,8 @@ def server_worker(host, port, d):
                     if data and len(data) == data_bytes_length:
                         d.append(data)
 
-                except:
+                except Exception as e:
+                    print(repr(e))
                     break
 
 
