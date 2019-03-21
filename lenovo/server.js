@@ -204,7 +204,7 @@ app.post('/', function(req, res) {
     console.log("\n\n\n");
 
 
-    if (leadNumber && lightSensorIsBlocked && !isRunning) {
+    if (lightSensorIsBlocked && !isRunning) {
         //console.log("I'm getting here?");
 
         // if our leading digit isn't a 0, it means we have broken teeth, so don't
@@ -214,10 +214,13 @@ app.post('/', function(req, res) {
         }
         else {
             var val = parseInt(leadNumber)%10;
-            if(val == 9){
+            if (val == null){
+                val = 8;
+            }
+            else if(val == 9){
                 val = 6;
             }
-            if (val < 1 || val > 7) {
+            else if (val < 1 || val > 7) {
                 val = 8;
             }
         }
