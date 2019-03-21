@@ -130,7 +130,7 @@ var targetY = 0;
 
 var inferenceCount  = 0;
 var totalConfidence = 0;
-const INFERENCE_AVERAGE_COUNT = 5;
+const INFERENCE_AVERAGE_COUNT = 3;
 const KEY_CONFIDENCE = "confidence";
 const KEY_HIT_COUNT  = "count";
 var counts           = {};
@@ -200,17 +200,16 @@ app.post('/', function(req, res) {
         }
 
             // DEBUGGING for the knob to tune for the confidence results
-/*
         console.log("REPORTING FOR " + tmpNumber);
         console.log("Count for this number: " + counts[tmpNumber][KEY_HIT_COUNT]);
         console.log("Normalized confidence: " + tmpConfidenceEqualized);
         console.log("");
-*/
+
     }
-/*
+
     console.log("Total Confidence: " + totalConfidence);
     console.log("\n\n\n");
-*/
+
 
     if (leadNumber && lightSensorIsBlocked && !isRunning) {
         //console.log("I'm getting here?");
