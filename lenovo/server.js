@@ -130,7 +130,7 @@ var targetY = 0;
 
 var inferenceCount  = 0;
 var totalConfidence = 0;
-const INFERENCE_AVERAGE_COUNT = 5;
+const INFERENCE_AVERAGE_COUNT = 3;
 const KEY_CONFIDENCE = "confidence";
 const KEY_HIT_COUNT  = "count";
 var counts           = {};
