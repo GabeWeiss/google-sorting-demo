@@ -168,6 +168,8 @@ app.post('/', function(req, res) {
         return;
     }
 
+    console.log("Got our 5 inference values, moving forward to running the demo now.");
+
     /*
         For Next 2019, we're tracking some stats on how often the app gets
         run. The schema wants a start and end time. This demo happens VERY
@@ -309,7 +311,7 @@ app.post('/', function(req, res) {
                     }
                 });
         }).then(result => {
-            console.log('Updated telemetry');
+            //console.log('Updated telemetry');
         }).catch(err => {
             console.log('Telemetry database update failed');
         });
@@ -343,7 +345,7 @@ var board = new five.Board();
 var currentPos = 4;
 var expectedChuteDelay = 1000;
 function runAnimation(val) {
-    console.log("Setting isRunning to true now");
+    //console.log("Setting isRunning to true now");
     isRunning = true;
 
     minTime = (parseInt(val)/8)*1000;
@@ -394,7 +396,7 @@ function runAnimation(val) {
         clearTimeout(timeoutFunction);
         timeoutFunction = setTimeout(function() {
             isRunning = false;
-            console.log("Setting isRunning to false now");
+            //console.log("Setting isRunning to false now");
         }, bestDelay+3000);
     // }, 2000);
 }
@@ -467,14 +469,14 @@ async.parallel([
                 sensor.on("change", function() {
                     //console.log(this.value);
                     if (this.value > lightThreshold) {
-                        if (lightSensorIsBlocked == true) {
-                            console.log("Changing lightSensorIsBlocked value from false to true");
-                        }
+//                        if (lightSensorIsBlocked == true) {
+//                            console.log("Changing lightSensorIsBlocked value from false to true");
+//                        }
                         lightSensorIsBlocked = false;
                     } else {
-                        if (lightSensorIsBlocked == false) {
-                            console.log("Changing lightSensorIsBlocked value from true to false");
-                        }
+//                        if (lightSensorIsBlocked == false) {
+//                            console.log("Changing lightSensorIsBlocked value from true to false");
+//                        }
                         lightSensorIsBlocked = true;
                     }
                 });
@@ -486,7 +488,7 @@ async.parallel([
                         } else if (sensor.is_active && minTime > (new Date().getTime() - triggeredTime) && "A"+currentPos == this.pin) {
                             sensor.active = false;
                             isRunning = false;
-                            console.log("Looks like we have been waiting too long, I'm resetting isRunning to false.");
+//                            console.log("Looks like we have been waiting too long, I'm resetting isRunning to false.");
                             clearTimeout(timeoutFunction);
                         }
                     });
