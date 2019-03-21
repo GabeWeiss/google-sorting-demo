@@ -107,13 +107,6 @@ app.get('/', function(req, res) {
     res.sendFile(__dirname + '/display.html');
 });
 
-// These variables were used in the bounding box detection
-// See note in code block below
-/*
-var targetX = 10;
-var targetY = 0;
-*/
-
 /*
     Schema for EdgeTPU dev board output:
         model output for number detected on puck
