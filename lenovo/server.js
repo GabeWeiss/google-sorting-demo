@@ -200,17 +200,16 @@ app.post('/', function(req, res) {
         }
 
             // DEBUGGING for the knob to tune for the confidence results
-/*
         console.log("REPORTING FOR " + tmpNumber);
         console.log("Count for this number: " + counts[tmpNumber][KEY_HIT_COUNT]);
         console.log("Normalized confidence: " + tmpConfidenceEqualized);
         console.log("");
-*/
+
     }
-/*
+
     console.log("Total Confidence: " + totalConfidence);
     console.log("\n\n\n");
-*/
+
 
     if (leadNumber && lightSensorIsBlocked && !isRunning) {
         //console.log("I'm getting here?");
