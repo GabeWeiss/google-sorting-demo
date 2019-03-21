@@ -75,7 +75,7 @@ io.on('connection', function(socket) {
     socket.on('config', function(data) {
         if (data.t === "chute") {
             servos.chute.positions[data.i][data.s] = data.v;
-            // if (is_ready && !is_running) 
+            // if (lightSensorIsBlocked && !isRunning) 
                 runAnimation(data.i);
         } else if (data.t === "servo") {
             servos[data.i][data.p] = data.v;
@@ -140,7 +140,7 @@ app.post('/', function(req, res) {
     res.status(200).send({ ok: true });
 
     // if we're currently running the board, don't do anything with incoming messages
-    if (is_running) {
+    if (isRunning) {
         return;
     }
 
@@ -210,7 +210,7 @@ app.post('/', function(req, res) {
     console.log("\n\n\n");
 */
 
-    if (leadNumber && is_ready && !is_running) {
+    if (leadNumber && lightSensorIsBlocked && !isRunning) {
         //console.log("I'm getting here?");
 
         // if our leading digit isn't a 0, it means we have broken teeth, so don't
@@ -314,7 +314,7 @@ app.post('/', function(req, res) {
             console.log('Telemetry database update failed');
         });
     }
-    else if (is_running) {
+    else if (isRunning) {
         // TODO: There's a bug here, if we get a post event, but we're
         // running, it means we haven't reset yet but we have post events
         // coming in and we probably need to handle them? Maybe? This might
@@ -333,8 +333,8 @@ app.post('/', function(req, res) {
 http.listen(port, function() {
     console.log('listening on *:' + port);
 });
-var is_ready = false;
-var is_running = false;
+var lightSensorIsBlocked = false;
+var isRunning = false;
 
 var five = require("johnny-five");
 var board = new five.Board();
@@ -343,8 +343,8 @@ var board = new five.Board();
 var currentPos = 4;
 var expectedChuteDelay = 1000;
 function runAnimation(val) {
-    console.log("Setting is_running to true now");
-    is_running = true;
+    console.log("Setting isRunning to true now");
+    isRunning = true;
 
     minTime = (parseInt(val)/8)*1000;
     
@@ -393,8 +393,8 @@ function runAnimation(val) {
         }
         clearTimeout(timeoutFunction);
         timeoutFunction = setTimeout(function() {
-            is_running = false;
-            console.log("Setting is_running to false now");
+            isRunning = false;
+            console.log("Setting isRunning to false now");
         }, bestDelay+3000);
     // }, 2000);
 }
@@ -467,15 +467,15 @@ async.parallel([
                 sensor.on("change", function() {
                     //console.log(this.value);
                     if (this.value > lightThreshold) {
-                        if (is_ready == true) {
-                            console.log("Changing is_ready value from false to true");
+                        if (lightSensorIsBlocked == true) {
+                            console.log("Changing lightSensorIsBlocked value from false to true");
                         }
-                        is_ready = false;
+                        lightSensorIsBlocked = false;
                     } else {
-                        if (is_ready == false) {
-                            console.log("Changing is_ready value from true to false");
+                        if (lightSensorIsBlocked == false) {
+                            console.log("Changing lightSensorIsBlocked value from true to false");
                         }
-                        is_ready = true;
+                        lightSensorIsBlocked = true;
                     }
                 });
 
@@ -485,8 +485,8 @@ async.parallel([
                             sensor.active = true;
                         } else if (sensor.is_active && minTime > (new Date().getTime() - triggeredTime) && "A"+currentPos == this.pin) {
                             sensor.active = false;
-                            is_running = false;
-                            console.log("Looks like we have been waiting too long, I'm resetting is_running to false.");
+                            isRunning = false;
+                            console.log("Looks like we have been waiting too long, I'm resetting isRunning to false.");
                             clearTimeout(timeoutFunction);
                         }
                     });
