@@ -138,6 +138,12 @@ var avgInferenceTime = 0;
 
 app.post('/', function(req, res) {
     res.status(200).send({ ok: true });
+
+    // if we're currently running the board, don't do anything with incoming messages
+    if (is_running) {
+        return;
+    }
+
     var body          = req.body;
     var gearNumber    = body.number;
     var confidence    = body.confidence;
@@ -192,36 +198,20 @@ app.post('/', function(req, res) {
         }
 
             // DEBUGGING for the knob to tune for the confidence results
+/*
         console.log("REPORTING FOR " + tmpNumber);
         console.log("Count for this number: " + counts[tmpNumber][KEY_HIT_COUNT]);
         console.log("Normalized confidence: " + tmpConfidenceEqualized);
         console.log("");
+*/
     }
+/*
     console.log("Total Confidence: " + totalConfidence);
     console.log("\n\n\n");
-
-    // LEAVING IN
-    // this is code for detecting bounding box output. The logic will change
-    // because now we're dealing with JSON blog in the body, but we may still
-    // use some piece of this when we re-introduce bounding boxes when AutoML
-    // gets object detection
-/*
-    var totalDiff = 999999999;
-    body.classes = body.classes.split('|');
-    body.bounding_boxes = body.bounding_boxes.split('|');
-    for (var i = 0; i < body.bounding_boxes.length; i++) {
-        body.bounding_boxes[i] = body.bounding_boxes[i].split(',');
-        var diff = (Math.abs(body.bounding_boxes[i][0] - targetX) + Math.abs(body.bounding_boxes[i][1] - targetY));
-        if ((!leadNumber || diff < totalDiff) && (body.bounding_boxes[i][0] < 125)) {
-            totalDiff = diff;
-             leadNumber = body.classes[i];
-        }
-    }
 */
-    //console.log(is_ready);
+
     if (leadNumber && is_ready && !is_running) {
         //console.log("I'm getting here?");
-        is_running = true;
 
         // if our leading digit isn't a 0, it means we have broken teeth, so don't
         // bother parsing the number at all, it doesn't matter.
@@ -353,6 +343,7 @@ var board = new five.Board();
 var currentPos = 4;
 var expectedChuteDelay = 1000;
 function runAnimation(val) {
+    console.log("Setting is_running to true now");
     is_running = true;
 
     minTime = (parseInt(val)/8)*1000;
@@ -360,11 +351,11 @@ function runAnimation(val) {
     expectedChuteDelay = (Math.abs(parseInt(val)-currentPos)*100);
     expectedToChuteDelay = ((parseInt(val)-1)/7)*2000;
     bestDelay = Math.max(expectedChuteDelay-expectedToChuteDelay, 1)
-
+/*
     console.log('expectedChuteDelay: '+expectedChuteDelay);
     console.log('expectedToChuteDelay: '+expectedToChuteDelay);
     console.log('bestDelay: '+bestDelay);
-    
+*/    
     // longestDelay = Math.max(expectedChuteDelay, expectedToChuteDelay);
     // servos["chute"].j5Obj.to(servos["chute"].positions[1]);
     // setTimeout(function() {
@@ -372,7 +363,7 @@ function runAnimation(val) {
         // console.log(servos[1].j5Obj);
         for (var i = 1; i <= 8; i++) {
             if (servos[i].j5Obj) {
-                console.log(i);
+                //console.log(i);
                 var pos = parseInt(servos[i].close);
                 if (i == parseInt(val))
                     pos = parseInt(servos[i].open);
@@ -393,16 +384,17 @@ function runAnimation(val) {
         if (servos["chute"].j5Obj) {
             if(currentPos < val){
                 servos["chute"].j5Obj.to(servos["chute"].positions[val].right);
-                console.log("to: "+servos["chute"].positions[val].right);
+                //console.log("to: "+servos["chute"].positions[val].right);
             }else{
                 servos["chute"].j5Obj.to(servos["chute"].positions[val].left);
-                console.log("to: "+servos["chute"].positions[val].left);
+                //console.log("to: "+servos["chute"].positions[val].left);
             }
             currentPos = val;
         }
         clearTimeout(timeoutFunction);
         timeoutFunction = setTimeout(function() {
             is_running = false;
+            console.log("Setting is_running to false now");
         }, bestDelay+3000);
     // }, 2000);
 }
@@ -466,7 +458,7 @@ async.parallel([
             process.exit();
         } else {
             Object.keys(servos).forEach(function(key) {
-                console.log(servos[key].props);
+                //console.log(servos[key].props);
                 servos[key].j5Obj = new five.Servo(servos[key].props);
             });
             Object.keys(sensors).forEach(function(key) {
@@ -476,12 +468,12 @@ async.parallel([
                     //console.log(this.value);
                     if (this.value > lightThreshold) {
                         if (is_ready == true) {
-                            console.log("Changing ready value from false to true");
+                            console.log("Changing is_ready value from false to true");
                         }
                         is_ready = false;
                     } else {
                         if (is_ready == false) {
-                            console.log("Changing ready value from true to false");
+                            console.log("Changing is_ready value from true to false");
                         }
                         is_ready = true;
                     }
@@ -494,6 +486,7 @@ async.parallel([
                         } else if (sensor.is_active && minTime > (new Date().getTime() - triggeredTime) && "A"+currentPos == this.pin) {
                             sensor.active = false;
                             is_running = false;
+                            console.log("Looks like we have been waiting too long, I'm resetting is_running to false.");
                             clearTimeout(timeoutFunction);
                         }
                     });
