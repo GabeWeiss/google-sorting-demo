@@ -66,6 +66,18 @@ def to_jpeg(image_bytes, bbox_bytes):
 
     image = Image.frombytes('RGB', (640, 480), image_bytes, 'raw', 'RGB')
 
+    # draw a box showing the part of the image sent to the model, with corner coordinates (0, 0) and (224, 224)
+    x1, y1, x2, y2 = (0, 0, 224, 224)
+
+    x1 += 258
+    x2 += 258
+    y1 += 148
+    y2 += 148
+
+    draw = ImageDraw.Draw(image)
+    draw.line(xy=[(x1, y1), (x2, y1), (x2, y2), (x1, y2), (x1, y1)], fill=128, width=5)
+    del draw
+
     # draw bounding boxes
     for f in [f1, f2]:
         x1, y1, x2, y2, score = f
