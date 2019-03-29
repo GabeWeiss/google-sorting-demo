@@ -67,7 +67,7 @@ def to_jpeg(image_bytes, bbox_bytes):
     image = Image.frombytes('RGB', (640, 480), image_bytes, 'raw', 'RGB')
 
     # draw a box showing the part of the image sent to the model, with corner coordinates (0, 0) and (224, 224)
-    x1, y1, x2, y2 = (0, 0, 224, 224)
+    x1, y1, x2, y2 = (0.0, 0.0, 224.0, 224.0)
 
     x1 += 258
     x2 += 258
