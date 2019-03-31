@@ -177,8 +177,8 @@ def to_jpeg(image_bytes):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--od-model-file', default='models/models_edge_compile_model_od_edgetpu.3_14_2019v2.tflite')
-    parser.add_argument('--digit-model-file', default='models/models_edge_compile_model_digit_ll_edgetpu.3_14_2019v2.tflite')
+    parser.add_argument('--od-model-file', default='models/model_od_edgetpu.tflite.3_30_2019')
+    parser.add_argument('--digit-model-file', default='models/model_digit_ll_edgetpu.tflite.3_30_2019')
     parser.add_argument('--server-url', default='http://192.168.42.100:8080')
     parser.add_argument('--socket-host', default='192.168.42.100')
     parser.add_argument('--socket-port', default=54321)
