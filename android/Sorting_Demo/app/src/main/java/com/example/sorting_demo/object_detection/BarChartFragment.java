@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import com.example.sorting_demo.BuildConfig;
 import com.example.sorting_demo.R;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.components.Legend;
@@ -36,6 +37,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -50,7 +53,8 @@ public class BarChartFragment extends Fragment {
 
     private static final String TAG = "BarChartFragment";
     private static final String COLLECTION_NAME = "telemetry-live-count";
-    private static final String DOCUMENT_ID = "gus-test";
+    private static final String SUMMARIES_DOCUMENT_ID = "firestore_summaries_document_id";
+    private String summariesDocumentId = "chutes-test"; // this value is updated form Remote Config
     private BarChart chart;
 
     Map<String, Integer> mapLiteralToAlgarism = new HashMap<String, Integer>() {{
@@ -60,7 +64,7 @@ public class BarChartFragment extends Fragment {
         put("three", 3);
         put("four", 4);
         put("five", 5);
-        put("siz", 6);
+        put("six", 6);
         put("seven", 7);
         put("eight", 8);
         put("nine", 9);
@@ -81,9 +85,27 @@ public class BarChartFragment extends Fragment {
         // create a new chart object
         formatBarChart(v);
 
-        loadDataFromDB();
+        loadRemoteConfig();
 
         return v;
+    }
+
+    private void loadRemoteConfig() {
+        final FirebaseRemoteConfig mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
+
+        mFirebaseRemoteConfig.fetch(00)
+                .addOnCompleteListener(getActivity(), new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            String docId = mFirebaseRemoteConfig.getString(SUMMARIES_DOCUMENT_ID);
+                            if(!docId.isEmpty())
+                                summariesDocumentId = docId;
+                            mFirebaseRemoteConfig.activateFetched();
+                        }
+                        loadDataFromDB();
+                    }
+                });
     }
 
     private void formatBarChart(View v) {
@@ -115,7 +137,7 @@ public class BarChartFragment extends Fragment {
     private void loadDataFromDB() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection(COLLECTION_NAME)
-                .document(DOCUMENT_ID)
+                .document(summariesDocumentId)
                 .addSnapshotListener(new EventListener<DocumentSnapshot>() {
                     @Override
                     public void onEvent(@Nullable DocumentSnapshot snapshot,
@@ -131,11 +153,11 @@ public class BarChartFragment extends Fragment {
                             ArrayList<BarEntry> entries = new ArrayList<>();
                             for (String key : snapshot.getData().keySet()) {
                                 try {
-                                    entries.add(new BarEntry(Integer.parseInt(key), (Long) snapshot.get(key)));
-//                                    if (mapLiteralToAlgarism.containsKey(key)) {
-//                                        int intValue = mapLiteralToAlgarism.get(key);
-//                                        entries.add(new BarEntry(intValue, (Long) snapshot.get(key)));
-//                                    }
+                                    //entries.add(new BarEntry(Integer.parseInt(key), (Long) snapshot.get(key)));
+                                    if (mapLiteralToAlgarism.containsKey(key)) {
+                                        int intValue = mapLiteralToAlgarism.get(key);
+                                        entries.add(new BarEntry(intValue, (Long) snapshot.get(key)));
+                                    }
                                 } catch (Exception exp) {
                                     Log.d(TAG, "Key is not an integer:" + key);
                                 }
@@ -148,6 +170,9 @@ public class BarChartFragment extends Fragment {
                             sets.add(ds);
                             BarData d = new BarData(sets);
                             chart.setData(d);
+                            XAxis xAxis = chart.getXAxis();
+                            xAxis.setLabelCount(entries.size());
+
                             chart.invalidate();
                         } else {
                             Log.d(TAG, "Current data: null");
