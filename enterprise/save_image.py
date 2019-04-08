@@ -10,7 +10,7 @@ width  = camera.width
 height = camera.height
 
 counter = 0
-folder = 1
+folder = 2
 outpath = 'captured_images/gear_{}/image_{}.jpg'
 
 def image_bytes_to_image(image_bytes):
