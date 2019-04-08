@@ -64,9 +64,13 @@ def recognize(od_engine, digit_engine, image):
 
     inference_time = od_inference_time + digit_inference_time
 
-    # label_id 1: gear
-    # label_id 0: missing
-    missing = [candidate for candidate in candidates if candidate.label_id == 0]
+    # the label_id for the missing tooth depends on the model
+    if 'gd' in od_engine.model_path():
+        missing_id = 11
+    else:
+        missing_id = 0
+
+    missing = [candidate for candidate in candidates if candidate.label_id == missing_id]
 
     print('{} missing teeth detected'.format(len(missing)))
     n_missing = min(len(missing), 2)
@@ -177,8 +181,8 @@ def to_jpeg(image_bytes):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--od-model-file', default='models/models_edge_compile_model_od_edgetpu.3_14_2019v2.tflite')
-    parser.add_argument('--digit-model-file', default='models/models_edge_compile_model_digit_ll_edgetpu.3_14_2019v2.tflite')
+    parser.add_argument('--od-model-file', default='models/model_od_edgetpu.tflite.3_30_2019')
+    parser.add_argument('--digit-model-file', default='models/model_digit_ll_edgetpu.tflite.3_30_2019')
     parser.add_argument('--server-url', default='http://192.168.42.100:8080')
     parser.add_argument('--socket-host', default='192.168.42.100')
     parser.add_argument('--socket-port', default=54321)
