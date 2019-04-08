@@ -66,7 +66,7 @@ def recognize(od_engine, digit_engine, image):
 
     # the label_id for the missing tooth depends on the model
     if 'gd' in od_engine.model_path():
-        missing_id = 11
+        missing_id = 10
     else:
         missing_id = 0
 
