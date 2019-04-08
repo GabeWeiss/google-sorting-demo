@@ -64,9 +64,13 @@ def recognize(od_engine, digit_engine, image):
 
     inference_time = od_inference_time + digit_inference_time
 
-    # label_id 1: gear
-    # label_id 0: missing
-    missing = [candidate for candidate in candidates if candidate.label_id == 0]
+    # the label_id for the missing tooth depends on the model
+    if 'gd' in od_engine.model_path():
+        missing_id = 11
+    else:
+        missing_id = 0
+
+    missing = [candidate for candidate in candidates if candidate.label_id == missing_id]
 
     print('{} missing teeth detected'.format(len(missing)))
     n_missing = min(len(missing), 2)
