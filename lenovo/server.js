@@ -211,22 +211,22 @@ app.post('/', function(req, res) {
         // if our leading digit isn't a 0, it means we have broken teeth, so don't
         // bother parsing the number at all, it doesn't matter.
         if (brokenTooth) {
-            leadNumber = 8;
+            val = 8;
         }
         else {
-            leadNumber = leadNumber % 10;
-            if (leadNumber == null){
-                leadNumber = 8;
+            var val = parseInt(leadNumber)%10;
+            if (val == null){
+                val = 8;
             }
-            else if(leadNumber == 9){
-                leadNumber = 6;
+            else if(val == 9){
+                val = 6;
             }
-            else if (leadNumber < 1 || leadNumber > 7) {
-                leadNumber = 8;
+            else if (val < 1 || val > 7) {
+                val = 8;
             }
         }
 
-        runAnimation(leadNumber);
+        runAnimation(val);
 
             // to avoid re-entrancy problems with new values coming in for the "lead"
             // numbers in the loop before the telemetry can finish sending.
