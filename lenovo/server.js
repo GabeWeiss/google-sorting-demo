@@ -123,7 +123,8 @@ app.get('/', function(req, res) {
 
 var inferenceCount  = 0;
 var totalConfidence = 0;
-const INFERENCE_AVERAGE_COUNT = 3;
+const THROW_AWAY_COUNT = 3;
+const INFERENCE_AVERAGE_COUNT = THROW_AWAY_COUNT + 3;
 const KEY_CONFIDENCE = "confidence";
 const KEY_HIT_COUNT  = "count";
 var counts           = {};
@@ -143,7 +144,14 @@ app.post('/', function(req, res) {
     
 
     if (inferenceCount < INFERENCE_AVERAGE_COUNT) {
+
+        // Throw away the first 3 images to reduce noisiness from images captured while puck is rolling.
+        if (inferenceCount < THROW_AWAY_COUNT) {
+            return;
+        }
+
         ++inferenceCount;
+
         avgInferenceTime += Math.round(body.inference_time * 1000);
 
         if (!counts[gearNumber]) {
