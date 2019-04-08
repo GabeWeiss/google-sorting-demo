@@ -140,10 +140,11 @@ app.post('/', function(req, res) {
     var body          = req.body;
     var gearNumber    = body.number;
     var confidence    = body.confidence;
-    avgInferenceTime += Math.round(body.inference_time * 1000);
+    
 
     if (inferenceCount < INFERENCE_AVERAGE_COUNT) {
         ++inferenceCount;
+        avgInferenceTime += Math.round(body.inference_time * 1000);
 
         if (!counts[gearNumber]) {
             counts[gearNumber] = {};
