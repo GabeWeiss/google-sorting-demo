@@ -123,7 +123,8 @@ app.get('/', function(req, res) {
 
 var inferenceCount  = 0;
 var totalConfidence = 0;
-const INFERENCE_AVERAGE_COUNT = 3;
+const THROW_AWAY_COUNT = 5;
+const INFERENCE_AVERAGE_COUNT = THROW_AWAY_COUNT + 5;
 const KEY_CONFIDENCE = "confidence";
 const KEY_HIT_COUNT  = "count";
 var counts           = {};
@@ -144,6 +145,12 @@ app.post('/', function(req, res) {
 
     if (inferenceCount < INFERENCE_AVERAGE_COUNT) {
         ++inferenceCount;
+
+        // Throw away the first 3 images to reduce noisiness from images captured while puck is rolling.
+        if (inferenceCount <= THROW_AWAY_COUNT) {
+            return;
+        }
+
         avgInferenceTime += Math.round(body.inference_time * 1000);
 
         if (!counts[gearNumber]) {
@@ -174,7 +181,7 @@ app.post('/', function(req, res) {
     var leadNumber     = 0;
     var leadConfidence = 0;
     var brokenTooth    = false;
-    avgInferenceTime = avgInferenceTime / INFERENCE_AVERAGE_COUNT;
+    avgInferenceTime = avgInferenceTime / (INFERENCE_AVERAGE_COUNT - THROW_AWAY_COUNT);
 
     var keys = Object.keys(counts);
     for (var i = 0; i < keys.length; ++i) {
