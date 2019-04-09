@@ -59,7 +59,7 @@ def recognize(od_engine, digit_engine, image):
         return [], digit_inference_time, [(0.0,)*5]*2
 
     start_time = time.time()
-    candidates = od_engine.DetectWithImage(image, threshold=0.6, top_k=1)
+    candidates = od_engine.DetectWithImage(image, threshold=0.3, top_k=1)
     od_inference_time = time.time() - start_time
 
     inference_time = od_inference_time + digit_inference_time
