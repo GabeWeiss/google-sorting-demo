@@ -123,7 +123,7 @@ app.get('/', function(req, res) {
 
 var inferenceCount  = 0;
 var totalConfidence = 0;
-const THROW_AWAY_COUNT = 5;
+const THROW_AWAY_COUNT = 3;
 const INFERENCE_AVERAGE_COUNT = THROW_AWAY_COUNT + 5;
 const KEY_CONFIDENCE = "confidence";
 const KEY_HIT_COUNT  = "count";
@@ -189,13 +189,11 @@ app.post('/', function(req, res) {
         var tmpConfidenceTotal = counts[tmpNumber][KEY_CONFIDENCE];
         var tmpConfidenceEqualized = tmpConfidenceTotal / totalConfidence;
 
+		if (tmpNumber.length > 0 && tmpNumber.charAt(0) != "0") {
+            brokenTooth = true;
+        }
+
         if (tmpConfidenceEqualized > leadConfidence) {
-            if (tmpNumber.length > 0 && tmpNumber.charAt(0) != "0") {
-                brokenTooth = true;
-            }
-            else {
-                brokenTooth = false;
-            }
             leadNumber = Number(tmpNumber);
             leadConfidence = tmpConfidenceEqualized;
         }
