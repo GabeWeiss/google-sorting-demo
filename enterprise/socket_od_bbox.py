@@ -51,7 +51,7 @@ def recognize(od_engine, digit_engine, image):
     # ClassifyWithImage returns a list of top_k pairs of (class_label: int, confidence_score: float) whose confidence_scores are greater than threshold.
 
     start_time = time.time()
-    digit_label_scores = digit_engine.ClassifyWithImage(image, threshold=0.35, top_k=3)
+    digit_label_scores = digit_engine.ClassifyWithImage(image, threshold=0.55, top_k=3)
     digit_inference_time = time.time() - start_time
     
     # Short circuit if no digit is detected
@@ -59,14 +59,18 @@ def recognize(od_engine, digit_engine, image):
         return [], digit_inference_time, [(0.0,)*5]*2
 
     start_time = time.time()
-    candidates = od_engine.DetectWithImage(image, threshold=0.5, top_k=5)
+    candidates = od_engine.DetectWithImage(image, threshold=0.6, top_k=1)
     od_inference_time = time.time() - start_time
 
     inference_time = od_inference_time + digit_inference_time
 
-    # label_id 1: gear
-    # label_id 0: missing
-    missing = [candidate for candidate in candidates if candidate.label_id == 0]
+    # the label_id for the missing tooth depends on the model
+    if 'gd' in od_engine.model_path():
+        missing_id = 10
+    else:
+        missing_id = 0
+
+    missing = [candidate for candidate in candidates if candidate.label_id == missing_id]
 
     print('{} missing teeth detected'.format(len(missing)))
     n_missing = min(len(missing), 2)

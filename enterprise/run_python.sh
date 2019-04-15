@@ -1,8 +1,6 @@
-nmcli dev wifi connect EdgeTPU24 ifname wlan0 password blacklotus
+# nmcli dev wifi connect EdgeTPU24 ifname wlan0 password blacklotus
 
-python3 socket_capture_and_recognize.py \
-	--model-file=edgetpu_model.tflite.2_27_2019 \
-	--video-device-index=1 \
-	--server-url=http://192.168.42.100:8080 \
-	--socket-host=192.168.42.100 \
-	--socket-port=54321
+python3 socket_od_bbox.py \
+	--od-model-file models/model_od_bt_edgetpu.tflite.4_7_2019 \
+	--digit-model-file models/model_digit_bt_edgetpu.tflite.4_7_2019
+
