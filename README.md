@@ -1,4 +1,4 @@
-## PLACEHOLDER: This is the readme for the Google sorting demo (it's gone by many names).
+## PLACEHOLDER: This is the repo for the Google sorting demo (it's gone by many names).
 
 **android/Sorting_Demo**: This is the folder for the Android application used at Google I/O 2019 to show off AutoML's model compiled down to mobile device and showing off the ability to use the same model on multiple formats of devices accurately.
 
