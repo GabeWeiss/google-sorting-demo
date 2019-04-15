@@ -52,56 +52,6 @@
                                  "chute");
                 };
                 
-                if (i == 1) {
-                    $('.chute_config').append($('<input type="button" value="Calibrate all"><br><br>').click(function(e) {
-                        var startVal = document.getElementById("chuteconfig_left_1").value;
-                        for (var i = 1; i <= 8; i++) {
-                            var leftElem  = document.getElementById("chuteconfig_left_" + i);
-                            var rightElem = document.getElementById("chuteconfig_right_" + i);
-                            switch(i) {
-                                case 1:
-                                    rightElem.value = startVal - 4;
-                                    break;
-                                case 2:
-                                    leftElem.value = startVal - 7;
-                                    rightElem.value = startVal - 11;
-                                    break;
-                                case 3:
-                                    leftElem.value = startVal - 16;
-                                    rightElem.value = startVal - 20;
-                                    break;
-                                case 4:
-                                    leftElem.value = startVal - 23;
-                                    rightElem.value = startVal - 27;
-                                    break;
-                                case 5:
-                                    leftElem.value = startVal - 30;
-                                    rightElem.value = startVal - 34;
-                                    break;
-                                case 6:
-                                    leftElem.value = startVal - 38;
-                                    rightElem.value = startVal - 42;
-                                    break;
-                                case 7:
-                                    leftElem.value = startVal - 46;
-                                    rightElem.value = startVal - 50;
-                                    break;
-                                case 8:
-                                    leftElem.value = startVal - 54;
-                                    rightElem.value = startVal - 58;
-                                    break;
-                            }
-                            doChangeFunc($(leftElem).attr('data-id'),
-                                         $(leftElem).val(),
-                                         $(leftElem).attr('data-side'),
-                                         "chute");
-                            doChangeFunc($(rightElem).attr('data-id'),
-                                         $(rightElem).val(),
-                                         $(rightElem).attr('data-side'),
-                                         "chute");
-                        }
-                    }));
-                }
                 $('.chute_config').append(i + ': ').append($('<input class="chute_config_input" type="number" id="chuteconfig_left_' + i + '" placeholder="' + i + '" data-side="left" data-id="' + i + '" value="' + servos["chute"].positions[i].left + '" />').change(changeFunc)).append($('<input class="chute_config_input" type="number" id="chuteconfig_right_' + i + '" placeholder="' + i + '" data-side="right" data-id="' + i + '" value="' + servos["chute"].positions[i].right + '" /><br/>').change(changeFunc));
 
                 var servo_config_change = function(e) {
