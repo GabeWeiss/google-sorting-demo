@@ -1,6 +1,6 @@
 ## PLACEHOLDER: This is the repo for the Google sorting demo (it's gone by many names).
 
-**android/Sorting_Demo**: This is the folder for the Android application used at Google I/O 2019 to show off AutoML's model compiled down to mobile device and showing off the ability to use the same model on multiple formats of devices accurately.
+**_android/Sorting_Demo_**: This is the folder for the Android application used at Google I/O 2019 to show off AutoML's model compiled down to mobile device and showing off the ability to use the same model on multiple formats of devices accurately.
 
 **base_training_images**: Holder folder for any images we take and need to transfer between places for training our model. Heavily depending upon lighting changes, etc to be accurate.
 
