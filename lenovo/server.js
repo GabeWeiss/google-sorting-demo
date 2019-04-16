@@ -29,7 +29,7 @@ const io = require('socket.io')(http, {
     wsEngine: 'ws'
 });
 
-// Firestore initialization
+// Firestore initialization for the demo's telemetry
 const firestoreAdmin = require('firebase-admin');
 var telemetrySA = require('./service_account.json');
 var telemetryApp = firestoreAdmin.initializeApp({
@@ -37,7 +37,6 @@ var telemetryApp = firestoreAdmin.initializeApp({
     databaseURL: 'https://sorting-demo-230918.firebaseio.com'
 }, "telemetry");
 var telemetryDB = telemetryApp.firestore();
-// end Firestore initialization
 
 // Example of writing a document out to our telemetry collection
 /*
@@ -49,6 +48,7 @@ var addTelemetry = telemetryDB.collection('telemetry').add({
 });
 */
 
+// Firestore initialization for the demo's usage during Next 2019
 var statsSA = require('./next19-metrics-service-account.json');
 var statsApp = firestoreAdmin.initializeApp({
     credential: firestoreAdmin.credential.cert(statsSA),
@@ -72,6 +72,12 @@ io.on('connection', function(socket) {
     socket.on('run', function(data) {
         runAnimation(data);
     });
+
+    // When calibrating the demo from the /config page, this is the callback
+    // it's used for setting the motor rotational position for the individual
+    // slot servos (and grabber claw), as well as the main chute. Under normal
+    // conditions, you shouldn't ever really need to recalibrate the individual
+    // servos, just the main chute
     socket.on('config', function(data) {
         if (data.t === "chute") {
             servos.chute.positions[data.i][data.s] = data.v;
@@ -85,26 +91,15 @@ io.on('connection', function(socket) {
     });
 });
 
-
-app.use('/js', express.static(__dirname + '/js'));
-app.use('/css', express.static(__dirname + '/css'));
-app.use('/img', express.static(__dirname + '/img'));
+// Direct webpage access is managed here. The only page we're currently working with here
+// is the configuration page for calibrating the servos and chute
 app.use('/config.json', express.static(__dirname + '/config.json'));
 app.use('/jquery.js', express.static(__dirname + '/node_modules/jquery/dist/jquery.min.js'));
-
-// healthcheck
-app.get('/_health', function(req, res) {
-    // add any necessary business logic (db connection, etc)
-    res.status(200).send({
-        ok: true
-    });
-});
-
 app.get('/config', function(req, res) {
     res.sendFile(__dirname + '/config.html');
 });
 app.get('/', function(req, res) {
-    res.sendFile(__dirname + '/display.html');
+    res.sendFile(__dirname + '/config.html');
 });
 
 /*
@@ -121,19 +116,43 @@ app.get('/', function(req, res) {
     inference_time: nn.nnnnnnnnn
 */
 
-var inferenceCount  = 0;
-var totalConfidence = 0;
+/*
+    One of the knobs we can turn in order to get more accuracy out of our models is in the two
+    variables below. As the gear rolls down the ramp, there's a tiny fraction of a second as it
+    rolls into the target zone where we get partial frames, and as a result, sometimes bad results.
+    The THROW_AWAY_COUNT is, as it describes, the number of inferences we throw away before we
+    start to "count". We're only getting inferences to us that are above the confidence threshold
+    from the model as well, so that's the other knob we can turn, is how low/high we want to accept
+    inferences from the model on the Enterprise board itself.
+
+    The INFERENCE_AVERAGE_COUNT is how many inferences to wait for before we start to calculate
+    what we think we're seeing. So the code below will take INFERENCE_AVERAGE_COUNT and normalize
+    the confidence across the groupings that we are seeing to vette which number being seen is the
+    best option.
+
+    Tuning these two is potentially detrimental to the demo, be careful. Keeping in mind, that if
+    the confidence of the model is right on the edge of the threshold, it's possible that it could
+    take a very long time to get n inferences from the Enterprise board, and while it's waiting,
+    the gear will stick in the grabber claw and not be droped. It is indeed possible that the gear
+    never drops. Important that whomever is running the demo understands that if/when it happens
+    so they can explain it.
+*/
 const THROW_AWAY_COUNT = 3;
 const INFERENCE_AVERAGE_COUNT = THROW_AWAY_COUNT + 5;
+
 const KEY_CONFIDENCE = "confidence";
 const KEY_HIT_COUNT  = "count";
+
+var inferenceCount   = 0;
 var counts           = {};
-var avgInferenceTime = 0;
+var totalConfidence  = 0;
+var avgInferenceTime = 0.0;
 
 app.post('/', function(req, res) {
     res.status(200).send({ ok: true });
 
-    // if we're currently running the board, don't do anything with incoming messages
+    // if we're currently running the board (meaning a gear is in motion),
+    // don't do anything with incoming messages
     if (isRunning) {
         return;
     }
@@ -142,16 +161,18 @@ app.post('/', function(req, res) {
     var gearNumber    = body.number;
     var confidence    = body.confidence;
     
-
+    // If we're still under our average count (which is our magic number + the throwaway count)
+    // then just keep iterating and gathering our inference numbers from the Enterprise board
     if (inferenceCount < INFERENCE_AVERAGE_COUNT) {
         ++inferenceCount;
 
-        // Throw away the first 3 images to reduce noisiness from images captured while puck is rolling.
+        // Throw away the first 'THROW_AWAY_COUNT' inferences to reduce noisiness from images
+        // captured while puck is rolling.
         if (inferenceCount <= THROW_AWAY_COUNT) {
             return;
         }
 
-        avgInferenceTime += Math.round(body.inference_time * 1000);
+        avgInferenceTime += body.inference_time;
 
         if (!counts[gearNumber]) {
             counts[gearNumber] = {};
@@ -181,14 +202,28 @@ app.post('/', function(req, res) {
     var leadNumber     = 0;
     var leadConfidence = 0;
     var brokenTooth    = false;
-    avgInferenceTime = avgInferenceTime / (INFERENCE_AVERAGE_COUNT - THROW_AWAY_COUNT);
+    
+    // inference time is given as micro-seconds, so average our accumulated values from the
+    // inference gathering above by the number of actual inferences we've taken, and then
+    // multiple by 1000 to get microseconds, and then truncate to only 2 digits of precision
+    // to get a compact value to display
+    avgInferenceTime = (avgInferenceTime / (INFERENCE_AVERAGE_COUNT - THROW_AWAY_COUNT)) * 1000;
+    avgInferenceTime = avgInferenceTime.toFixed(2);
 
+    // iterating over our gathered set of inferences to find out what we saw, and which is
+    // the likely real value
     var keys = Object.keys(counts);
     for (var i = 0; i < keys.length; ++i) {
         var tmpNumber = keys[i];
         var tmpConfidenceTotal = counts[tmpNumber][KEY_CONFIDENCE];
         var tmpConfidenceEqualized = tmpConfidenceTotal / totalConfidence;
 
+        // we had some problems with false negatives where we'd have a broken tooth, but the digit
+        // confidence was highest on a gear that happened to NOT have the broken tooth returned
+        // with it. To combat that, we're rolling with, if we have any gears in our set of inferences
+        // that had a broken tooth, then we'll consider the gear as broken. We can fine tune this
+        // value in the code that runs on the Edge TPU development board by adjusting the
+        // confidence threshold for the model tracking the broken teeth
 		if (tmpNumber.length > 0 && tmpNumber.charAt(0) != "0") {
             brokenTooth = true;
         }
@@ -198,28 +233,33 @@ app.post('/', function(req, res) {
             leadConfidence = tmpConfidenceEqualized;
         }
 
-            // DEBUGGING for the knob to tune for the confidence results
+        // DEBUGGING
+        // This is tracking our normalized values from the inferences sent by the Edge TPU board
         console.log("REPORTING FOR " + tmpNumber);
         console.log("Count for this number: " + counts[tmpNumber][KEY_HIT_COUNT]);
         console.log("Normalized confidence: " + tmpConfidenceEqualized);
-        console.log("");
-
     }
 
     console.log("Total Confidence: " + totalConfidence);
-    console.log("\n\n\n");
+    console.log("\n\n");
 
 
+    // the light sensor in question here is in the grabber claw. So when it's blocked it means
+    // we have a gear in the position, AND we've gathered our requisite inferences. I think
+    // there's probably some better logic where we only start gathering inferences once the light
+    // is blocked at the sensor, but that was a bigger change than we could make in the time before
+    // we had the demo up and running
     if (lightSensorIsBlocked && !isRunning) {
-        //console.log("I'm getting here?");
 
-        // if our leading digit isn't a 0, it means we have broken teeth, so don't
-        // bother parsing the number at all, it doesn't matter.
+        // If we have broken teeth, don't bother parsing the number at all, it doesn't matter.
+        // Our demo has 8 buckets. 1-7 plus a "reject" bucket which is position 8.
         if (brokenTooth) {
             val = 8;
         }
         else {
-            var val = parseInt(leadNumber)%10;
+            // recall values coming in are in the format nn, where the tens digit is tooth missing
+            // detection, and the ones digit is our actual detected number
+            var val = parseInt(leadNumber) % 10;
             if (val == null){
                 val = 8;
             }
@@ -233,6 +273,7 @@ app.post('/', function(req, res) {
 
         runAnimation(val);
 
+/*  // UNCOMMENT HERE TO START SENDING DATA AGAIN TO FIRESTORE DATABASES
             // to avoid re-entrancy problems with new values coming in for the "lead"
             // numbers in the loop before the telemetry can finish sending.
         var telemetryNumber = leadNumber;
@@ -270,12 +311,12 @@ app.post('/', function(req, res) {
                 .then(doc => {
                     // increment the appropriate value
                     var docData = doc.data();
-                    /*
-                        TODO: Add in logic around defective gears once we have
-                        that working. Until then, we're going to just consider
-                        numbers written because we don't have that chunk in yet.
-                        Once it is, then that may circumvent this switch statement
-                    */
+                    //
+                    //  TODO: Add in logic around defective gears once we have
+                    //  that working. Until then, we're going to just consider
+                    //  numbers written because we don't have that chunk in yet.
+                    //  Once it is, then that may circumvent this switch statement
+                    //
                     switch(telemetryNumber) {
                         case 1:
                             var newVal = docData.one + 1;
@@ -316,21 +357,14 @@ app.post('/', function(req, res) {
         }).catch(err => {
             console.log('Telemetry database update failed');
         });
-    }
-    else if (isRunning) {
-        // TODO: There's a bug here, if we get a post event, but we're
-        // running, it means we haven't reset yet but we have post events
-        // coming in and we probably need to handle them? Maybe? This might
-        // be the bug on why we're stalling and not continuing until we
-        // jiggle the puck
-        console.log("I'm ready to go, and got some inferences in, but the demo is running still.");
+*/  // UNCOMMENT HERE TO START SENDING DATA AGAIN TO FIRESTORE DATABASES
     }
 
     // reset our variables to be ready to start gathering the next 5
     inferenceCount   = 0;
     counts           = {};
     totalConfidence  = 0;
-    avgInferenceTime = 0;
+    avgInferenceTime = 0.0;
 });
 
 http.listen(port, function() {
@@ -458,7 +492,7 @@ async.parallel([
         console.log("Started");
         if (err) {
             console.log("CRITICAL ERROR: FAILED TO START");
-            process.exit();
+            //process.exit();
         } else {
             Object.keys(servos).forEach(function(key) {
                 //console.log(servos[key].props);
