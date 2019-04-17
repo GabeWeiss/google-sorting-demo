@@ -382,6 +382,10 @@ var isRunning = false;
 var five = require("johnny-five");
 var board = new five.Board();
 
+
+// This is the code that drives the Arduino and actually runs the gear through the demo
+// I don't think this has been fine tuned to account for the new motor, which means
+// we can likely tighten up the timings here
 var currentPos = 4;
 var expectedChuteDelay = 1000;
 function runAnimation(val) {
@@ -392,7 +396,7 @@ function runAnimation(val) {
     
     expectedChuteDelay = (Math.abs(parseInt(val) - currentPos) * 100);
     expectedToChuteDelay = ((parseInt(val) - 1) / 7) * 2000;
-    bestDelay = Math.max(expectedChuteDelay-expectedToChuteDelay, 1)
+    bestDelay = Math.max(expectedChuteDelay - expectedToChuteDelay, 1)
 /*
     console.log('expectedChuteDelay: '+expectedChuteDelay);
     console.log('expectedToChuteDelay: '+expectedToChuteDelay);
@@ -431,7 +435,7 @@ function runAnimation(val) {
     timeoutFunction = setTimeout(function() {
         isRunning = false;
         //console.log("Setting isRunning to false now");
-    }, bestDelay+3000);
+    }, bestDelay + 3000);
 }
 var timeoutFunction = false;
 
