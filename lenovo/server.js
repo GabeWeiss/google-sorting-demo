@@ -195,7 +195,7 @@ app.post('/', function(req, res) {
         return;
     }
 
-    console.log("Got our 5 inference values, moving forward to running the demo now.");
+    //console.log("Got our inference values, moving forward to running the demo now.");
 
     /*
         For Next 2019, we're tracking some stats on how often the app gets
@@ -388,10 +388,10 @@ function runAnimation(val) {
     //console.log("Setting isRunning to true now");
     isRunning = true;
 
-    minTime = (parseInt(val)/8)*1000;
+    minTime = (parseInt(val) / 8) * 1000;
     
-    expectedChuteDelay = (Math.abs(parseInt(val)-currentPos)*100);
-    expectedToChuteDelay = ((parseInt(val)-1)/7)*2000;
+    expectedChuteDelay = (Math.abs(parseInt(val) - currentPos) * 100);
+    expectedToChuteDelay = ((parseInt(val) - 1) / 7) * 2000;
     bestDelay = Math.max(expectedChuteDelay-expectedToChuteDelay, 1)
 /*
     console.log('expectedChuteDelay: '+expectedChuteDelay);
