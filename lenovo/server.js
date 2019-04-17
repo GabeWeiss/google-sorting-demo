@@ -398,47 +398,40 @@ function runAnimation(val) {
     console.log('expectedToChuteDelay: '+expectedToChuteDelay);
     console.log('bestDelay: '+bestDelay);
 */    
-    // longestDelay = Math.max(expectedChuteDelay, expectedToChuteDelay);
-    // servos["chute"].j5Obj.to(servos["chute"].positions[1]);
-    // setTimeout(function() {
-        // console.log(val);
-        // console.log(servos[1].j5Obj);
-        for (var i = 1; i <= 8; i++) {
-            if (servos[i].j5Obj) {
-                //console.log(i);
-                var pos = parseInt(servos[i].close);
-                if (i == parseInt(val))
-                    pos = parseInt(servos[i].open);
-                servos[i].j5Obj.to(pos);
-            }
+    for (var i = 1; i <= 8; i++) {
+        if (servos[i].j5Obj) {
+            var pos = parseInt(servos[i].close);
+            if (i == parseInt(val))
+                pos = parseInt(servos[i].open);
+            servos[i].j5Obj.to(pos);
         }
-        
+    }
+
+    setTimeout(function() {
+        if (servos["dropper"].j5Obj) {
+            servos["dropper"].j5Obj.to(servos["dropper"].open);
+        }
         setTimeout(function() {
             if (servos["dropper"].j5Obj) {
-                servos["dropper"].j5Obj.to(servos["dropper"].open);
+                servos["dropper"].j5Obj.to(servos["dropper"].close);
             }
-            setTimeout(function() {
-                if (servos["dropper"].j5Obj) {
-                    servos["dropper"].j5Obj.to(servos["dropper"].close);
-                }
-            }, 2000);
-        }, bestDelay);
-        if (servos["chute"].j5Obj) {
-            if(currentPos < val){
-                servos["chute"].j5Obj.to(servos["chute"].positions[val].right);
-                //console.log("to: "+servos["chute"].positions[val].right);
-            }else{
-                servos["chute"].j5Obj.to(servos["chute"].positions[val].left);
-                //console.log("to: "+servos["chute"].positions[val].left);
-            }
-            currentPos = val;
+        }, 2000);
+    }, bestDelay);
+    if (servos["chute"].j5Obj) {
+        if(currentPos < val){
+            servos["chute"].j5Obj.to(servos["chute"].positions[val].right);
+            //console.log("to: "+servos["chute"].positions[val].right);
+        }else{
+            servos["chute"].j5Obj.to(servos["chute"].positions[val].left);
+            //console.log("to: "+servos["chute"].positions[val].left);
         }
-        clearTimeout(timeoutFunction);
-        timeoutFunction = setTimeout(function() {
-            isRunning = false;
-            //console.log("Setting isRunning to false now");
-        }, bestDelay+3000);
-    // }, 2000);
+        currentPos = val;
+    }
+    clearTimeout(timeoutFunction);
+    timeoutFunction = setTimeout(function() {
+        isRunning = false;
+        //console.log("Setting isRunning to false now");
+    }, bestDelay+3000);
 }
 var timeoutFunction = false;
 
