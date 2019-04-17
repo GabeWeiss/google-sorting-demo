@@ -16,7 +16,6 @@ var lightThreshold = 10;
 
 var ms_per_inference = 999999;
 
-const port = process.env.PORT || 8080;
 const express = require('express');
 const fs = require('fs');
 const async = require("async");
@@ -102,19 +101,10 @@ app.get('/', function(req, res) {
     res.sendFile(__dirname + '/config.html');
 });
 
-/*
-    Schema for EdgeTPU dev board output:
-        model output for number detected on puck
-        tens digit is the key for broken teeth or not
-            0 == no teeth broken
-            1 == one broken tooth
-            2 == two broken teeth
-    number: nn
-        confidence value from model on the number detected
-    confidence: nn.nnnnnnnn
-        inference time model took to give result in seconds
-    inference_time: nn.nnnnnnnnn
-*/
+const port = process.env.PORT || 8080;
+http.listen(port, function() {
+    console.log('listening on *:' + port);
+});
 
 /*
     One of the knobs we can turn in order to get more accuracy out of our models is in the two
@@ -148,6 +138,21 @@ var counts           = {};
 var totalConfidence  = 0;
 var avgInferenceTime = 0.0;
 
+// This is the core loop of the application. It relies on receiving post events from the
+// Edge TPU development board. 
+/*
+    Schema for EdgeTPU dev board output:
+        model output for number detected on puck
+        tens digit is the key for broken teeth or not
+            0 == no teeth broken
+            1 == one broken tooth
+            2 == two broken teeth
+    number: nn
+        confidence value from model on the number detected
+    confidence: nn.nnnnnnnn
+        inference time model took to give result in seconds
+    inference_time: nn.nnnnnnnnn
+*/
 app.post('/', function(req, res) {
     res.status(200).send({ ok: true });
 
@@ -365,17 +370,17 @@ app.post('/', function(req, res) {
     counts           = {};
     totalConfidence  = 0;
     avgInferenceTime = 0.0;
-});
+}); // end of the app.post() call
 
-http.listen(port, function() {
-    console.log('listening on *:' + port);
-});
+
+
 var lightSensorIsBlocked = false;
 var isRunning = false;
 
+// Johnny-five is an awesome node library for all things robotics and IoT sensor
+// http://johnny-five.io/
 var five = require("johnny-five");
 var board = new five.Board();
-
 
 var currentPos = 4;
 var expectedChuteDelay = 1000;
