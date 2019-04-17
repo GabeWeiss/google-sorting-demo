@@ -6,5 +6,5 @@ d = {
     'inference_time':0.02965432
 }
 
-for x in range(10):
+for x in range(9):
     r = requests.post("http://localhost:8080", data = d)
