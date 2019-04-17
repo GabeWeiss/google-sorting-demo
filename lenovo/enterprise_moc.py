@@ -1,6 +1,9 @@
 import requests
 import random
 
+# This number should match the INFERENCE_AVERAGE_COUNT value in server.js
+inference_count = 8
+
 # Test number
 num = 1
 broken = 0
@@ -11,7 +14,7 @@ baseline_confidence = 0.75
 # Test inference time
 baseline_inference = 0.029
 
-for x in range(9):
+for x in range(inference_count + 1):
     rand = random.randint(1,101)
     inference_shift = random.uniform(0.000, 0.0013)
     tmp_inference = baseline_inference

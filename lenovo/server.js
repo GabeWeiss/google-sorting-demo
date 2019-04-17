@@ -126,7 +126,8 @@ http.listen(port, function() {
     so they can explain it.
 */
 const THROW_AWAY_COUNT = 3;
-const INFERENCE_AVERAGE_COUNT = THROW_AWAY_COUNT + 5;
+const KEEP_COUNT = 5;
+const INFERENCE_AVERAGE_COUNT = THROW_AWAY_COUNT + KEEP_COUNT;
 
 const KEY_CONFIDENCE = "confidence";
 const KEY_HIT_COUNT  = "count";
