@@ -439,6 +439,8 @@ function runAnimation(val) {
 }
 var timeoutFunction = false;
 
+
+// Called by the configuration page to update positions of the servos and the chute columns
 function save() {
     var clone = Object.assign({}, servos);
     var keys = Object.keys(clone);
@@ -456,6 +458,8 @@ function save() {
     });
 }
 
+// Manages loading the config.json file to initially set the positions of the servos and chutes
+// in memory
 function load(cb) {
     fs.access('config.json', fs.constants.F_OK | fs.constants.W_OK, (err) => {
         if (err) {
@@ -466,7 +470,7 @@ function load(cb) {
             fs.readFile('config.json', (err, raw) => {
                 if (!err) {
                     var data = JSON.parse(raw);
-                    // console.log(data);
+                    //console.log(data);
                     servos = data.servos;
                 }
                 cb(null);
@@ -474,6 +478,7 @@ function load(cb) {
         }
     });
 }
+
 var minTime = 100;
 var triggeredTime = new Date().getTime();
 async.parallel([
@@ -503,38 +508,35 @@ async.parallel([
             Object.keys(sensors).forEach(function(key) {
                 var sensor = new five.Light("A" + key);
                 if (key == 0) {
-                sensor.on("change", function() {
-                    //console.log(this.value);
-                    if (this.value > lightThreshold) {
-//                        if (lightSensorIsBlocked == true) {
-//                            console.log("Changing lightSensorIsBlocked value from false to true");
-//                        }
-                        lightSensorIsBlocked = false;
-                    } else {
-//                        if (lightSensorIsBlocked == false) {
-//                            console.log("Changing lightSensorIsBlocked value from true to false");
-//                        }
-                        lightSensorIsBlocked = true;
-                    }
-                });
-
+                    sensor.on("change", function() {
+                        //console.log(this.value);
+                        if (this.value > lightThreshold) {
+                            //if (lightSensorIsBlocked == true) {
+                                //console.log("Changing lightSensorIsBlocked value from false to true");
+                            //}
+                            lightSensorIsBlocked = false;
+                        } else {
+                            //if (lightSensorIsBlocked == false) {
+                                //console.log("Changing lightSensorIsBlocked value from true to false");
+                            //}
+                            lightSensorIsBlocked = true;
+                        }
+                    });
                 } else {
                     sensor.on("change", function() {
                         if (this.level > lightThreshold && !sensor.active) {
                             sensor.active = true;
-                        } else if (sensor.is_active && minTime > (new Date().getTime() - triggeredTime) && "A"+currentPos == this.pin) {
+                        } else if (sensor.is_active && minTime > (new Date().getTime() - triggeredTime) && "A" + currentPos == this.pin) {
                             sensor.active = false;
                             isRunning = false;
-//                            console.log("Looks like we have been waiting too long, I'm resetting isRunning to false.");
+                            //console.log("Looks like we have been waiting too long, I'm resetting isRunning to false.");
                             clearTimeout(timeoutFunction);
                         }
                     });
                 }
                 sensors[key].j5Obj = sensor;
             });
-
         }
-
     });
 
 //Default servos object
@@ -666,29 +668,4 @@ var sensors = {
     0: {
         j5Obj: false
     }
-    // ,
-    // 1: {
-    //     j5Obj: false
-    // },
-    // 2: {
-    //     j5Obj: false
-    // },
-    // 3: {
-    //     j5Obj: false
-    // },
-    // 4: {
-    //     j5Obj: false
-    // },
-    // 5: {
-    //     j5Obj: false
-    // },
-    // 6: {
-    //     j5Obj: false
-    // },
-    // 7: {
-    //     j5Obj: false
-    // },
-    // 8: {
-    //     j5Obj: false
-    // },
 }
