@@ -14,8 +14,6 @@
 
 var lightThreshold = 10;
 
-var ms_per_inference = 999999;
-
 const express = require('express');
 const fs = require('fs');
 const async = require("async");
@@ -164,7 +162,8 @@ app.post('/', function(req, res) {
 
     var body          = req.body;
     var gearNumber    = body.number;
-    var confidence    = body.confidence;
+    var confidence    = Number(body.confidence);
+    var inference     = Number(body.inference_time);
     
     // If we're still under our average count (which is our magic number + the throwaway count)
     // then just keep iterating and gathering our inference numbers from the Enterprise board
@@ -177,7 +176,7 @@ app.post('/', function(req, res) {
             return;
         }
 
-        avgInferenceTime += body.inference_time;
+        avgInferenceTime += inference;
 
         if (!counts[gearNumber]) {
             counts[gearNumber] = {};
