@@ -14,7 +14,7 @@
 
 const express = require('express');
 const fs = require('fs');
-const async = require("async");
+const async = require('async');
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded());
@@ -76,7 +76,7 @@ io.on('connection', function(socket) {
     socket.on('config', function(data) {
         if (data.t === "chute") {
             servos.chute.positions[data.i][data.s] = data.v;
-            // if (lightSensorIsBlocked && !isRunning) 
+            // if (lightSensorIsBlocked && !isRunning)
                 runAnimation(data.i);
         } else if (data.t === "servo") {
             servos[data.i][data.p] = data.v;
@@ -136,7 +136,7 @@ var totalConfidence  = 0;
 var avgInferenceTime = 0.0;
 
 // This is the core loop of the application. It relies on receiving post events from the
-// Edge TPU development board. 
+// Edge TPU development board.
 /*
     Schema for EdgeTPU dev board output:
         model output for number detected on puck
@@ -163,7 +163,7 @@ app.post('/', function(req, res) {
     var gearNumber    = body.number;
     var confidence    = Number(body.confidence);
     var inference     = Number(body.inference_time);
-    
+
     // If we're still under our average count (which is our magic number + the throwaway count)
     // then just keep iterating and gathering our inference numbers from the Enterprise board
     if (inferenceCount < INFERENCE_AVERAGE_COUNT) {
@@ -181,14 +181,12 @@ app.post('/', function(req, res) {
             counts[gearNumber] = {};
         }
 
-        counts[gearNumber][KEY_CONFIDENCE] = 
-            counts[gearNumber][KEY_CONFIDENCE] ? 
-                counts[gearNumber][KEY_CONFIDENCE] + confidence :
-                confidence;
-        counts[gearNumber][KEY_HIT_COUNT] = 
-            counts[gearNumber][KEY_HIT_COUNT] ?
-                counts[gearNumber][KEY_HIT_COUNT] + 1 :
-                1;
+        counts[gearNumber][KEY_CONFIDENCE] = counts[gearNumber][KEY_CONFIDENCE]
+                                    ? counts[gearNumber][KEY_CONFIDENCE] + confidence
+                                    : confidence;
+        counts[gearNumber][KEY_HIT_COUNT] = counts[gearNumber][KEY_HIT_COUNT]
+                                    ? counts[gearNumber][KEY_HIT_COUNT] + 1
+                                    : 1;
         totalConfidence += confidence;
         return;
     }
