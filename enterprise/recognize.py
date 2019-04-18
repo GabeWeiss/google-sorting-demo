@@ -116,8 +116,13 @@ def post(url, data):
         print('Failed to post to server {}: {}'.format(url, repr(e)))
 
 
-# worker running in a thread handling capture and recognize
+# worker handling capture and recognize
+# is setup to be able to run in a thread, but for our demo, isn't necessary
 def worker(od_model_file, digit_model_file, video_device_index, server_url, socket_host, socket_port):
+    # We're using two models because trying to get both the digit recognized and 
+    # the broken gear recognized in a single classification model from AutoML wasn't
+    # doable. The od_engine tracks the broken gear or not, and the digit_engine tracks
+    # the digit detection
     od_engine = DetectionEngine(od_model_file)
     digit_engine = ClassificationEngine(digit_model_file)
 
@@ -128,7 +133,8 @@ def worker(od_model_file, digit_model_file, video_device_index, server_url, sock
             print('Cannot connect to socket.')
 
         while True:
-            # The while loop go through the steps of capture, recognize, and post, along with data transformation steps.
+            # The while loop go through the steps of capture, recognize, and post,
+            # along with data transformation steps.
             try:
                 image_bytes = capture(camera)
 
@@ -166,18 +172,6 @@ def worker(od_model_file, digit_model_file, video_device_index, server_url, sock
                 print(repr(e))
                 import ipdb; ipdb.set_trace()
 
-
-def to_jpeg(image_bytes):
-    import io
-    bytes_buffer = io.BytesIO()
-
-    image = Image.frombytes('RGB', (640, 480), image_bytes, 'raw', 'RGB')
-    image.save(bytes_buffer, format='JPEG')
-    frame = bytes_buffer.getvalue()
-
-    return frame
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
@@ -188,15 +182,7 @@ if __name__ == '__main__':
     parser.add_argument('--socket-port', default=54321)
     parser.add_argument('--video-device-index', default=1)
     parser.add_argument('--debug', action='store_true')
-    parser.add_argument('--thread', action='store_true', default=False)
 
     args, _ = parser.parse_known_args()
 
-    if args.thread:
-        thread = threading.Thread(target=worker, args=(args.od_model_file, args.digit_model_file, args.video_device_index, args.server_url, args.socket_host, args.socket_port))
-
-        thread.start()
-
-        thread.join()
-    else:
-        worker(args.od_model_file, args.digit_model_file, args.video_device_index, args.server_url, args.socket_host, args.socket_port)
+    worker(args.od_model_file, args.digit_model_file, args.video_device_index, args.server_url, args.socket_host, args.socket_port)
