@@ -263,10 +263,10 @@ app.post('/', function(req, res) {
             // recall values coming in are in the format nn, where the tens digit is tooth missing
             // detection, and the ones digit is our actual detected number
             var val = parseInt(leadNumber) % 10;
-            if (val == null){
+            if (val == null) {
                 val = 8;
             }
-            else if(val == 9){
+            else if(val == 9) {
                 val = 6;
             }
             else if (val < 1 || val > 7) {
