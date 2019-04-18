@@ -246,6 +246,13 @@ app.post('/', function(req, res) {
     console.log("Total Confidence: " + totalConfidence);
     console.log("\n\n");
 
+    // This is a hack. For telemetry purposes, there is no 9, so we want to treat any 9's as 6's.
+    // Below we adjust the temp 'val' in terms of running the demo itself, but we also want to
+    // adjust the 'real' number here so that when it's sent to the Firestore instance, we properly
+    // attribute 9's to 6.
+    if (leadNumber == 9) {
+        leadNumber = 6;
+    }
 
     // the light sensor in question here is in the grabber claw. So when it's blocked it means
     // we have a gear in the position, AND we've gathered our requisite inferences. I think
