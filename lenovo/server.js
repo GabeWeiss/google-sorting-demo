@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-var lightThreshold = 10;
-
 const express = require('express');
 const fs = require('fs');
 const async = require("async");
@@ -479,6 +477,7 @@ function load(cb) {
     });
 }
 
+var lightThreshold = 10;
 var minTime = 100;
 var triggeredTime = new Date().getTime();
 async.parallel([
@@ -499,6 +498,13 @@ async.parallel([
         console.log("Started");
         if (err) {
             console.log("CRITICAL ERROR: FAILED TO START");
+            // NOTE: For testing purposes, comment the process.exit() line below and
+            // the process runs fine, and you can use the enterprise_moc.py script to
+            // fake inference data coming from the Edge TPU board to test out any
+            // changes. Obviously it won't run the demo because the light sensor won't
+            // ever get covered (unless you go back through and hardcode it) but it should
+            // let you test the business logic around selection of the "right" gear slot
+
             //process.exit();
         } else {
             Object.keys(servos).forEach(function(key) {
@@ -508,8 +514,13 @@ async.parallel([
             Object.keys(sensors).forEach(function(key) {
                 var sensor = new five.Light("A" + key);
                 if (key == 0) {
+                    // As the gear rolls down the ramp, it covers a light sensor underneath where the
+                    // gear hits the grabber claw. This is what's used by the demo to know whether
+                    // or not it should be dropping a gear or not
                     sensor.on("change", function() {
                         //console.log(this.value);
+                        // the Debug below is used to test to be sure the lightThreshold is tuned
+                        // correctly
                         if (this.value > lightThreshold) {
                             //if (lightSensorIsBlocked == true) {
                                 //console.log("Changing lightSensorIsBlocked value from false to true");
