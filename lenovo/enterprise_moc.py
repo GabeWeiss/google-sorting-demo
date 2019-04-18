@@ -1,7 +1,8 @@
 import requests
 import random
 
-# This number should match the INFERENCE_AVERAGE_COUNT value in server.js
+# This number should match the INFERENCE_AVERAGE_COUNT value in server.js unless
+# You're testing overflow (or stalling)
 inference_count = 8
 
 # Test number
@@ -34,7 +35,7 @@ for x in range(inference_count + 1):
     tmp_num = num
     tmp_broken = broken
     rand = random.randint(1,101)
-    print ("number rand: " + str(rand))
+    #print ("number rand: " + str(rand))
     # Test for number deviance
     if rand <= 2:
         tmp_num = num + 1
@@ -43,7 +44,7 @@ for x in range(inference_count + 1):
         tmp_num = num - 1
         tmp_confidence = tmp_confidence - random.uniform(0.00, 0.2)
     rand = random.randint(1,101)
-    print ("broken rand: " + str(rand))
+    #print ("broken rand: " + str(rand))
     if broken == 0:
         if rand <= 4:
             tmp_broken = 1
