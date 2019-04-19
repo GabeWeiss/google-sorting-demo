@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Index</title>
+    <link rel="stylesheet" href="css/fonts/fonts.css" type="text/css">
+    <link rel="stylesheet" href="css/index.css" type="text/css">
+    <link rel="stylesheet" href="css/pass.css" type="text/css">
+    <link rel="stylesheet" href="css/status.css" type="text/css">
+</head>
+
+<body>
+    <div class="holding-div header">Vision Intelligence with AutoML and the EdgeTPU&trade;</div>
+    <div class="holding-div webcam">
+        <div class="heading">Webcam Feed</div>
+        <div class="webcam-holder">
+            <!-- <img class="webcam-image" src="img/test.jpg" /> -->
+			<iframe class="webcam-image" src="http://localhost:5000/video"></iframe>
+        </div>
+    </div>
+    <div class="holding-div numbers">
+        <div class="heading">Numbers Captured</div>
+        <div class="chart" id="chart"></div>
+    </div>
+    <div class="holding-div inference">
+        <div class="heading">Inference Time</div>
+        <div class="reading-number js-inference-number"></div>
+    </div>
+    <div class="holding-div reading">
+        <div class="heading">Number Reading</div>
+        <div class="reading-number js-last"></div>
+    </div>
+    <script src="socket.io/socket.io.js"></script>
+    <script src="jquery.js"></script>
+    <script src="js/highcharts.js"></script>
+    <script src="js/index.js"></script>
+    <div class="pass">
+        <label for="password" class="label_input">Password </label>
+        <input type="password" name="password" placeholder="" id="password" class="password" required><br />
+        <br>
+        <input type="button" class="button submit_btn" value="Submit" />
+        <br> <br> <br>
+        Hint: Make sure cookies are enabled so you only have to enter the password once!
+    </div>
+    <div class="status_items">
+        <div class="status_btn">STATUS</div>
+        <div class="status_holder">
+            <div class="close_status">CLOSE</div>
+            <iframe src="./status"></iframe>
+        </div>
+    </div>
+    <script src="js/pass.js"></script>
+    <script src="js/status.js"></script>
+</body>
+
+</html>

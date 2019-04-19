@@ -1,0 +1,30 @@
+.pass {
+    text-align: center;
+    height: 100%;
+    padding-top: 200px;
+    width: 100%;
+    height: 100%;
+    background-color: #fff;
+    z-index: 30000;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.button {
+    color: #FFF;
+    text-align: center;
+    border-radius: 6px;
+    line-height: 80px;
+    font-family: "GoogleSans-Regular";
+
+    height: 80px;
+    width: 225px;
+    border-radius: 6px;
+    background-color: #4285F4;
+    font-size: 28px;
+}
+
+.button:active {
+    background-color: #2a6ad5;
+}
