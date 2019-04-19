@@ -135,6 +135,8 @@ var counts           = {};
 var totalConfidence  = 0;
 var avgInferenceTime = 0.0;
 
+var modelOutput      = [];
+
 // This is the core loop of the application. It relies on receiving post events from the
 // Edge TPU development board.
 /*
@@ -168,6 +170,9 @@ app.post('/', function(req, res) {
     // then just keep iterating and gathering our inference numbers from the Enterprise board
     if (inferenceCount < INFERENCE_AVERAGE_COUNT) {
         ++inferenceCount;
+
+        var outputLine = `{ "number":"${gearNumber}", "confidence":${confidence}, "inference_time":${inference} }`;
+        modelOutput.push(outputLine);
 
         // Throw away the first 'THROW_AWAY_COUNT' inferences to reduce noisiness from images
         // captured while puck is rolling.
@@ -294,8 +299,29 @@ app.post('/', function(req, res) {
             end: firestoreAdmin.firestore.Timestamp.fromDate(new Date(Date.now()))
         });
 
+
+        // send the inference bundle for the mobile apps
+        var modelInferenceName = "model-inference";
+        var inferenceJSON = { "keep_count":KEEP_COUNT,
+            "throwaway_count":THROW_AWAY_COUNT
+        };
+        var inferenceLength = modelOutput.length;
+        for (var i = 0; i < inferenceLength; ++i) {
+            inferenceJSON[i.toString()] = modelOutput[i];
+        }
+
+        telemetryDB.collection("telemetry-live-count")
+                        .doc("model-inference").set(
+            inferenceJSON
+        ).then(function() {
+            // intentional no-op
+        }).catch(function(error) {
+            console.log("Couldn't write the model inference to Firestore: ", error);
+        });
+
+
         // send the telemetry for what chute was hit
-        var longTermCollectionName = "next2019-test";
+        var longTermCollectionName = "google-io";
         var longTermTelemetryDoc = telemetryDB.collection("telemetry-long-term")
                                             .doc("events")
                                             .collection(longTermCollectionName);
@@ -373,6 +399,7 @@ app.post('/', function(req, res) {
     counts           = {};
     totalConfidence  = 0;
     avgInferenceTime = 0.0;
+    modelOutput      = [];
 }); // end of the app.post() call
 
 
@@ -502,7 +529,7 @@ async.parallel([
     function(err, results) {
         console.log("Started");
         if (err) {
-            console.log("CRITICAL ERROR: FAILED TO START");
+            console.log("CRITICAL ERROR: FAILED TO START\n\n");
             // NOTE: For testing purposes, comment the process.exit() line below and
             // the process runs fine, and you can use the enterprise_moc.py script to
             // fake inference data coming from the Edge TPU board to test out any
