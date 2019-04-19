@@ -44,7 +44,7 @@ import com.example.sorting_demo.R;
 public class DetectorActivity extends CameraActivity implements ImageReader.OnImageAvailableListener {
     private static final Size DESIRED_PREVIEW_SIZE = new Size(448, 448);
 
-    private static final float TEXT_SIZE_DIP = 10;
+    private static final float TEXT_SIZE_DIP = 12;
 
     private Integer sensorOrientation;
 
@@ -103,27 +103,16 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                 new DrawCallback() {
                     @Override
                     public void drawCallback(final Canvas canvas) {
-                        final Paint paint = new Paint();
-                        paint.setColor(Color.RED);
-                        paint.setStyle(Paint.Style.STROKE);
-                        paint.setStrokeWidth(12.0f);
-
-                        // Draw the area the camera will actually detect
-                        final float h1 = .11f * CANVAS_HEIGHT * CANVAS_HEIGHT_PERCENTAGE;
-                        final float h2 = .75f * CANVAS_HEIGHT * CANVAS_HEIGHT_PERCENTAGE;
-                        final RectF r = new RectF(0.0f * CANVAS_WIDTH,
-                                h1,
-                                1f * CANVAS_WIDTH,
-                                h2);
-                        canvas.drawRect(r, paint);
-                        borderedText.drawText(canvas, r.left, r.bottom * (h2 - h1), "Camera Detection Area");
-
                         // Get the
-                        borderedText.drawText(canvas, 0.25f, 0.75f * (h2 - h1) + h1,
-                                String.format("#: %d - C: %.2f - V: %b",
-                                        MainActivity.gearindex,
-                                        MainActivity.confidence,
-                                        MainActivity.valid));
+                        final Vector<String> lines = new Vector<String>();
+                        lines.add("");
+
+                        lines.add(String.format("Detected Number: %d",MainActivity.gearindex));
+                        lines.add(String.format("Confidence: %.2f", MainActivity.confidence));
+                        lines.add(String.format("Valid Gear: %b", MainActivity.valid));
+                        lines.add("Inference time: " + lastProcessingTimeMs + "ms");
+
+                        borderedText.drawLines(canvas, 10, canvas.getHeight() - 10, lines);
                     }
                 });
 

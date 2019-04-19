@@ -1,0 +1,135 @@
+@font-face {
+    font-family: 'Roboto';
+    src: url('Roboto-Bold.eot') format('eot');
+    src: url('Roboto-Bold.eot?#iefix') format('embedded-opentype'), url('Roboto-Bold.ttf') format('truetype'), url('Roboto-Bold.woff') format('woff'), url('Roboto-Bold.woff2') format('woff2');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('Roboto-Light.eot') format('eot');
+    src: url('Roboto-Light.eot?#iefix') format('embedded-opentype'), url('Roboto-Light.ttf') format('truetype'), url('Roboto-Light.woff') format('woff'), url('Roboto-Light.woff2') format('woff2');
+    font-weight: lighter;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('Roboto-Medium.eot') format('eot');
+    src: url('Roboto-Medium.eot?#iefix') format('embedded-opentype'), url('Roboto-Medium.ttf') format('truetype'), url('Roboto-Medium.woff') format('woff'), url('Roboto-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('Roboto-Regular.eot') format('eot');
+    src: url('Roboto-Regular.eot?#iefix') format('embedded-opentype'), url('Roboto-Regular.ttf') format('truetype'), url('Roboto-Regular.woff') format('woff'), url('Roboto-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('Roboto-Thin.eot') format('eot');
+    src: url('Roboto-Thin.eot?#iefix') format('embedded-opentype'), url('Roboto-Thin.ttf') format('truetype'), url('Roboto-Thin.woff') format('woff'), url('Roboto-Thin.woff2') format('woff2');
+    font-weight: 100;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Google Sans Display';
+    src: url('GoogleSansDisplay-Bold.eot') format('eot');
+    src: url('GoogleSansDisplay-Bold.eot?#iefix') format('embedded-opentype'), url('GoogleSansDisplay-Bold.ttf') format('truetype'), url('GoogleSansDisplay-Bold.woff') format('woff'), url('GoogleSansDisplay-Bold.woff2') format('woff2');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Google Sans Display';
+    src: url('GoogleSansDisplay-BoldItalic.eot') format('eot');
+    src: url('GoogleSansDisplay-BoldItalic.eot?#iefix') format('embedded-opentype'), url('GoogleSansDisplay-BoldItalic.ttf') format('truetype'), url('GoogleSansDisplay-BoldItalic.woff') format('woff'), url('GoogleSansDisplay-BoldItalic.woff2') format('woff2');
+    font-weight: bold;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Google Sans Display';
+    src: url('GoogleSansDisplay-Italic.eot') format('eot');
+    src: url('GoogleSansDisplay-Italic.eot?#iefix') format('embedded-opentype'), url('GoogleSansDisplay-Italic.ttf') format('truetype'), url('GoogleSansDisplay-Italic.woff') format('woff'), url('GoogleSansDisplay-Italic.woff2') format('woff2');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Google Sans Display';
+    src: url('GoogleSansDisplay-Medium.eot') format('eot');
+    src: url('GoogleSansDisplay-Medium.eot?#iefix') format('embedded-opentype'), url('GoogleSansDisplay-Medium.ttf') format('truetype'), url('GoogleSansDisplay-Medium.woff') format('woff'), url('GoogleSansDisplay-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Google Sans Display';
+    src: url('GoogleSansDisplay-MediumItalic.eot') format('eot');
+    src: url('GoogleSansDisplay-MediumItalic.eot?#iefix') format('embedded-opentype'), url('GoogleSansDisplay-MediumItalic.ttf') format('truetype'), url('GoogleSansDisplay-MediumItalic.woff') format('woff'), url('GoogleSansDisplay-MediumItalic.woff2') format('woff2');
+    font-weight: 500;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Google Sans Display';
+    src: url('GoogleSansDisplay-Regular.eot') format('eot');
+    src: url('GoogleSansDisplay-Regular.eot?#iefix') format('embedded-opentype'), url('GoogleSansDisplay-Regular.ttf') format('truetype'), url('GoogleSansDisplay-Regular.woff') format('woff'), url('GoogleSansDisplay-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Google Sans';
+    src: url('GoogleSans-Bold.eot') format('eot');
+    src: url('GoogleSans-Bold.eot?#iefix') format('embedded-opentype'), url('GoogleSans-Bold.ttf') format('truetype'), url('GoogleSans-Bold.woff') format('woff'), url('GoogleSans-Bold.woff2') format('woff2');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Google Sans';
+    src: url('GoogleSans-BoldItalic.eot') format('eot');
+    src: url('GoogleSans-BoldItalic.eot?#iefix') format('embedded-opentype'), url('GoogleSans-BoldItalic.ttf') format('truetype'), url('GoogleSans-BoldItalic.woff') format('woff'), url('GoogleSans-BoldItalic.woff2') format('woff2');
+    font-weight: bold;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Google Sans';
+    src: url('GoogleSans-Italic.eot') format('eot');
+    src: url('GoogleSans-Italic.eot?#iefix') format('embedded-opentype'), url('GoogleSans-Italic.ttf') format('truetype'), url('GoogleSans-Italic.woff') format('woff'), url('GoogleSans-Italic.woff2') format('woff2');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Google Sans';
+    src: url('GoogleSans-Medium.eot') format('eot');
+    src: url('GoogleSans-Medium.eot?#iefix') format('embedded-opentype'), url('GoogleSans-Medium.ttf') format('truetype'), url('GoogleSans-Medium.woff') format('woff'), url('GoogleSans-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Google Sans';
+    src: url('GoogleSans-MediumItalic.eot') format('eot');
+    src: url('GoogleSans-MediumItalic.eot?#iefix') format('embedded-opentype'), url('GoogleSans-MediumItalic.ttf') format('truetype'), url('GoogleSans-MediumItalic.woff') format('woff'), url('GoogleSans-MediumItalic.woff2') format('woff2');
+    font-weight: 500;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Google Sans';
+    src: url('GoogleSans-Regular.eot') format('eot');
+    src: url('GoogleSans-Regular.eot?#iefix') format('embedded-opentype'), url('GoogleSans-Regular.ttf') format('truetype'), url('GoogleSans-Regular.woff') format('woff'), url('GoogleSans-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}

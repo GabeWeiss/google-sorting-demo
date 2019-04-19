@@ -8,7 +8,7 @@
     android:orientation="vertical">
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/camera_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Start" />
@@ -24,6 +24,5 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Show Live Results" />
-
 
 </LinearLayout>
