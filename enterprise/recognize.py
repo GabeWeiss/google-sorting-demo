@@ -27,6 +27,7 @@ def video_capture(video_device_index):
 
 def capture(camera):
     try:
+        # PyV4L2Camera.camera.Camera.get_frame returns width * height * 3 bytes for the three RGB channels.
         image_bytes = camera.get_frame()
         return image_bytes
     except:
@@ -36,6 +37,7 @@ def capture(camera):
 def image_bytes_to_image(image_bytes, width, height):
     image = Image.frombytes('RGB', (width, height), image_bytes, 'raw', 'RGB')
     
+    # Crop a certain section of the full image where the gear should be processed.
     side = 224
     top = (height - side) / 2 + 20
     left = (width - side) / 2 + 50
@@ -48,53 +50,57 @@ def image_bytes_to_image(image_bytes, width, height):
 
 
 def recognize(od_engine, digit_engine, image):
-    # ClassifyWithImage returns a list of top_k pairs of (class_label: int, confidence_score: float) whose confidence_scores are greater than threshold.
+    # od_engine is a DetectionEngine for object detection.
+    # digit_ending is a ClassificationEngine for recognizing the written digit.
+    # For more information on the EdgeTPU Python API:
+    # https://coral.withgoogle.com/docs/edgetpu/api-intro/
 
     start_time = time.time()
     digit_label_scores = digit_engine.ClassifyWithImage(image, threshold=0.55, top_k=3)
     digit_inference_time = time.time() - start_time
     
-    # Short circuit if no digit is detected
+    # Return an empty result if no digit is detected. 
     if len(digit_label_scores) == 0:
-        return [], digit_inference_time, [(0.0,)*5]*2
+        return None, digit_inference_time, None
 
     start_time = time.time()
+    # Return only one missing tooth detection.  The server has additional logic to improve recall.
     candidates = od_engine.DetectWithImage(image, threshold=0.6, top_k=1)
     od_inference_time = time.time() - start_time
 
     inference_time = od_inference_time + digit_inference_time
 
-    # the label_id for the missing tooth depends on the model
-    if 'gd' in od_engine.model_path():
-        missing_id = 10
-    else:
-        missing_id = 0
-
+    # The object detection model has two labels:
+    # 0: missing tooth
+    # 1: gear
+    missing_id = 0
     missing = [candidate for candidate in candidates if candidate.label_id == missing_id]
+    n_missing = len(missing)
 
-    print('{} missing teeth detected'.format(len(missing)))
-    n_missing = min(len(missing), 2)
+    print('{} missing teeth detected'.format(n_missing))
+
+    if n_missing == 0:
+        return digit_label_scores[0], inference_time, None
     
-    # construct label_scores
-    label_scores = [(10*n_missing + digit_label_scores[0][0], digit_label_scores[0][1])]
+    # Construct label_score when there is a missing tooth:
+    # If a gear has a written '5' and is missing at least one tooth, then it is labeled as '15'.
+    label_score = (10 + digit_label_scores[0][0], digit_label_scores[0][1])
 
-    # return also bounding boxes and scores (up to 2) with padding so that bbox_scores is always a list of length 2.
-    bbox_scores = []
-    for c in missing[:n_missing]:
-        (x1, y1), (x2, y2) = c.bounding_box
-        score = c.score
-        bbox_scores.append((x1, y1, x2, y2, score))
-    # padding
-    bbox_scores.extend([(0.0,)*5]*(2-len(bbox_scores)))
-    
-    return label_scores, inference_time, bbox_scores
+    # Return also the bounding box coordinates (left, top, right, bottom) and the confidence score.
+    (x1, y1), (x2, y2) = missing[0].bounding_box
+    score = missing[0].score
+
+    bbox_score = (x1, y1, x2, y2, score)
+
+    return label_score, inference_time, bbox_score
 
 
-def format_results(label_scores, inference_time):
-    # keeping only the top result
-    label, score = label_scores[0]
+def format_results(label_score, inference_time):
+    # Keep only the top classification result.
+    label, score = label_score
     data_dict = {
-            'number': '{:02d}'.format(int(label)),
+        'number': '{:02d}'.format(int(label)),
+        # Only the digit classification's confidence score is sent to the server.
         'confidence': float(score),
         'inference_time': float(inference_time)
     }
@@ -116,13 +122,12 @@ def post(url, data):
         print('Failed to post to server {}: {}'.format(url, repr(e)))
 
 
-# worker handling capture and recognize
-# is setup to be able to run in a thread, but for our demo, isn't necessary
+# The function worker handles capture, recognize, and post.
 def worker(od_model_file, digit_model_file, video_device_index, server_url, socket_host, socket_port):
     # We're using two models because trying to get both the digit recognized and 
     # the broken gear recognized in a single classification model from AutoML wasn't
     # doable. The od_engine tracks the broken gear or not, and the digit_engine tracks
-    # the digit detection
+    # the digit classification.
     od_engine = DetectionEngine(od_model_file)
     digit_engine = ClassificationEngine(digit_model_file)
 
@@ -140,48 +145,52 @@ def worker(od_model_file, digit_model_file, video_device_index, server_url, sock
 
                 image = image_bytes_to_image(image_bytes, camera.width, camera.height)
 
-                label_scores, inference_time, bbox_scores = recognize(od_engine, digit_engine, image)
+                label_score, inference_time, bbox_score = recognize(od_engine, digit_engine, image)
 
-                # format bbox_scores into 2*5*8 bytes and add to image_bytes
+                # First we send image and bounding box data to the streaming video server through the socket.
 
+                # If no missing tooth is detected, we send some zero bytes.
+                if bbox_score is None:
+                    bbox_score = (0.0,) * 5
+
+                # Pack bbox_score into 5*8 bytes (since each float is a float64) and append to image_bytes.
                 bbox_bytes = b''
-                for bbox_score in bbox_scores:
-                    for f in bbox_score:
-                        bbox_bytes += struct.pack('!d', f)
+                for f in bbox_score:
+                    bbox_bytes += struct.pack('!d', f)
 
                 data_bytes = image_bytes + bbox_bytes
 
-                assert len(data_bytes) == 640*480*3 + 2*5*8
+                # Constant length "packets" to the socket server makes it easier for the streaming server to handle the data.
+                assert len(data_bytes) == 640*480*3 + 5*8
                 try:
                     s.send(data_bytes)
                 except:
                     pass
 
-                if len(label_scores) == 0:
+                # If no digits is detected, do not post to the server that controls mechanical components.
+                if label_score is None:
                     continue
 
-                print(label_scores, inference_time, bbox_scores)
+                print(label_score, inference_time, bbox_score)
                 
-                data = format_results(label_scores, inference_time)
-                response = post(server_url, data)
-                print(response)
+                data = format_results(label_score, inference_time)
+                unused_response = post(server_url, data)
 
             except KeyboardInterrupt:
                 break
             except Exception as e:
                 print(repr(e))
-                import ipdb; ipdb.set_trace()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--od-model-file', default='models/model_od_edgetpu.tflite.3_30_2019')
-    parser.add_argument('--digit-model-file', default='models/model_digit_ll_edgetpu.tflite.3_30_2019')
+    parser.add_argument('--od-model-file', default='models/model_od_bt_edgetpu.tflite.4_7_2019')
+    parser.add_argument('--digit-model-file', default='models/model_digit_bt_edgetpu.tflite.4_7_2019')
     parser.add_argument('--server-url', default='http://192.168.42.100:8080')
     parser.add_argument('--socket-host', default='192.168.42.100')
     parser.add_argument('--socket-port', default=54321)
     parser.add_argument('--video-device-index', default=1)
-    parser.add_argument('--debug', action='store_true')
 
     args, _ = parser.parse_known_args()
 
