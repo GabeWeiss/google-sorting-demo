@@ -1,0 +1,55 @@
+.status_items {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    width: 300px;
+    height: 300px;
+    z-index: 200000;
+    display: none;
+    font-family: 'Google Sans';
+}
+
+.status_items .status_btn {
+    background: #4285F4;
+    color: #FFF;
+    text-align: center;
+    padding: 15px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16pt;
+    border: 0;
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
+}
+
+.status_items .status_holder {
+    background: #FFF;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    text-align: right;
+    display: none;
+    z-index: 2;
+}
+
+.status_items .close_status {
+    background: #4285F4;
+    color: #FFF;
+    text-align: center;
+    padding: 15px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16pt;
+    border: 0;
+    display: inline-block;
+}
+
+.status_items .status_holder iframe {
+    border: 1px solid;
+    width: 100%;
+    height: 200px;
+    margin: 0;
+    padding: 0;
+}
