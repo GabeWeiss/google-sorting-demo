@@ -35,15 +35,25 @@
                 $('.holder').append($('<div class="button" data-id="' + i + '">' + i + '</div>').click(function(e) {
                     socket.emit("run", $(this).attr('data-id'));
                 }));
-                var changeFunc = function(e) {
+
+                function doChangeFunc(i, v, s, t) {
                     socket.emit("config", {
-                        "i": $(this).attr('data-id'),
-                        "v": $(this).val(),
-                        "s": $(this).attr('data-side'),
-                        "t": "chute",
+                        "i": i,
+                        "v": v,
+                        "s": s,
+                        "t": t,
                     });
+                }
+
+                var changeFunc = function(e) {
+                    doChangeFunc($(this).attr('data-id'),
+                                 $(this).val(),
+                                 $(this).attr('data-side'),
+                                 "chute");
                 };
-                $('.chute_config').append(i + ': ').append($('<input class="chute_config_input" type="number" placeholder="' + i + '" data-side="left" data-id="' + i + '" value="' + servos["chute"].positions[i].left + '" />').change(changeFunc)).append($('<input class="chute_config_input" type="number" placeholder="' + i + '" data-side="right" data-id="' + i + '" value="' + servos["chute"].positions[i].right + '" /><br/>').change(changeFunc));
+                
+                $('.chute_config').append(i + ': ').append($('<input class="chute_config_input" type="number" id="chuteconfig_left_' + i + '" placeholder="' + i + '" data-side="left" data-id="' + i + '" value="' + servos["chute"].positions[i].left + '" />').change(changeFunc)).append($('<input class="chute_config_input" type="number" id="chuteconfig_right_' + i + '" placeholder="' + i + '" data-side="right" data-id="' + i + '" value="' + servos["chute"].positions[i].right + '" /><br/>').change(changeFunc));
+
                 var servo_config_change = function(e) {
                     socket.emit("config", {
                         "i": $(this).attr('data-id'),

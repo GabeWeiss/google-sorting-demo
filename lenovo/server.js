@@ -1,4 +1,18 @@
-var lightThreshold = 3;
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+var lightThreshold = 10;
 
 var ms_per_inference = 999999;
 
@@ -10,10 +24,46 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded());
 const http = require('http').Server(app);
-
+// io is for the port connections and notifications
 const io = require('socket.io')(http, {
     wsEngine: 'ws'
 });
+
+// Firestore initialization
+const firestoreAdmin = require('firebase-admin');
+var telemetrySA = require('./service_account.json');
+var telemetryApp = firestoreAdmin.initializeApp({
+    credential: firestoreAdmin.credential.cert(telemetrySA),
+    databaseURL: 'https://sorting-demo-230918.firebaseio.com'
+}, "telemetry");
+var telemetryDB = telemetryApp.firestore();
+// end Firestore initialization
+
+// Example of writing a document out to our telemetry collection
+/*
+var addTelemetry = telemetryDB.collection('telemetry').add({
+    number: 1,
+    confidence: 0.72,
+    inference_time: 5,
+    timestamp: Date.now()
+});
+*/
+
+var statsSA = require('./next19-metrics-service-account.json');
+var statsApp = firestoreAdmin.initializeApp({
+    credential: firestoreAdmin.credential.cert(statsSA),
+    databaseURL: 'https://next19-metrics-test.firebaseio.com'
+}, "stats");
+var statsDB = statsApp.firestore();
+
+
+// Example of writing a document out to our stats collection
+/*
+var addStat = statsDB.collection('demos').doc("SortingDemo").collection('sessions').add({
+    start: firestoreAdmin.firestore.Timestamp.fromDate(new Date(Date.now())),
+    end: firestoreAdmin.firestore.Timestamp.fromDate(new Date(Date.now()))
+});
+*/
 
 var lastpos = 1;
 io.on('connection', function(socket) {
@@ -25,7 +75,7 @@ io.on('connection', function(socket) {
     socket.on('config', function(data) {
         if (data.t === "chute") {
             servos.chute.positions[data.i][data.s] = data.v;
-            // if (is_ready && !is_running) 
+            // if (lightSensorIsBlocked && !isRunning) 
                 runAnimation(data.i);
         } else if (data.t === "servo") {
             servos[data.i][data.p] = data.v;
@@ -57,55 +107,237 @@ app.get('/', function(req, res) {
     res.sendFile(__dirname + '/display.html');
 });
 
-var targetX = 10;
-var targetY = 0;
-var lastDetected = 4;
-var lastSend = 0;
+/*
+    Schema for EdgeTPU dev board output:
+        model output for number detected on puck
+        tens digit is the key for broken teeth or not
+            0 == no teeth broken
+            1 == one broken tooth
+            2 == two broken teeth
+    number: nn
+        confidence value from model on the number detected
+    confidence: nn.nnnnnnnn
+        inference time model took to give result in seconds
+    inference_time: nn.nnnnnnnnn
+*/
+
+var inferenceCount  = 0;
+var totalConfidence = 0;
+const THROW_AWAY_COUNT = 3;
+const INFERENCE_AVERAGE_COUNT = THROW_AWAY_COUNT + 5;
+const KEY_CONFIDENCE = "confidence";
+const KEY_HIT_COUNT  = "count";
+var counts           = {};
+var avgInferenceTime = 0;
+
 app.post('/', function(req, res) {
-    console.log(req.body);
     res.status(200).send({ ok: true });
-    var body = req.body;
-    var totalDiff = 999999999;
-    var best_guess = false;
 
-    ms_per_inference = body.ms_per_inference;
-    if(lastSend+200 < new Date().getTime()){
-        lastSend = new Date().getTime();
-        io.emit('speed', ms_per_inference);
-    }
-    body.classes = body.classes.split('|');
-    body.bounding_boxes = body.bounding_boxes.split('|');
-    for (var i = 0; i < body.bounding_boxes.length; i++) {
-        body.bounding_boxes[i] = body.bounding_boxes[i].split(',');
-        var diff = (Math.abs(body.bounding_boxes[i][0] - targetX) + Math.abs(body.bounding_boxes[i][1] - targetY));
-        if ((!best_guess || diff < totalDiff) && (body.bounding_boxes[i][0] < 125)) {
-            totalDiff = diff;
-             best_guess = body.classes[i];
-        }
+    // if we're currently running the board, don't do anything with incoming messages
+    if (isRunning) {
+        return;
     }
 
-    console.log(best_guess);
-    if (best_guess && is_ready && !is_running) {
-        is_running = true;
-        var val = parseInt(best_guess)%10;
-        if(val == 9){
-            val = 6;
+    var body          = req.body;
+    var gearNumber    = body.number;
+    var confidence    = body.confidence;
+    
+
+    if (inferenceCount < INFERENCE_AVERAGE_COUNT) {
+        ++inferenceCount;
+
+        // Throw away the first 3 images to reduce noisiness from images captured while puck is rolling.
+        if (inferenceCount <= THROW_AWAY_COUNT) {
+            return;
         }
-        if (val < 1 || val > 7) {
+
+        avgInferenceTime += Math.round(body.inference_time * 1000);
+
+        if (!counts[gearNumber]) {
+            counts[gearNumber] = {};
+        }
+
+        counts[gearNumber][KEY_CONFIDENCE] = 
+            counts[gearNumber][KEY_CONFIDENCE] ? 
+                counts[gearNumber][KEY_CONFIDENCE] + confidence :
+                confidence;
+        counts[gearNumber][KEY_HIT_COUNT] = 
+            counts[gearNumber][KEY_HIT_COUNT] ?
+                counts[gearNumber][KEY_HIT_COUNT] + 1 :
+                1;
+        totalConfidence += confidence;
+        return;
+    }
+
+    console.log("Got our 5 inference values, moving forward to running the demo now.");
+
+    /*
+        For Next 2019, we're tracking some stats on how often the app gets
+        run. The schema wants a start and end time. This demo happens VERY
+        fast, but I'll dutifully record a start and end time anway.
+    */
+    var demoStartTime = Date.now();
+
+    var leadNumber     = 0;
+    var leadConfidence = 0;
+    var brokenTooth    = false;
+    avgInferenceTime = avgInferenceTime / (INFERENCE_AVERAGE_COUNT - THROW_AWAY_COUNT);
+
+    var keys = Object.keys(counts);
+    for (var i = 0; i < keys.length; ++i) {
+        var tmpNumber = keys[i];
+        var tmpConfidenceTotal = counts[tmpNumber][KEY_CONFIDENCE];
+        var tmpConfidenceEqualized = tmpConfidenceTotal / totalConfidence;
+
+		if (tmpNumber.length > 0 && tmpNumber.charAt(0) != "0") {
+            brokenTooth = true;
+        }
+
+        if (tmpConfidenceEqualized > leadConfidence) {
+            leadNumber = Number(tmpNumber);
+            leadConfidence = tmpConfidenceEqualized;
+        }
+
+            // DEBUGGING for the knob to tune for the confidence results
+        console.log("REPORTING FOR " + tmpNumber);
+        console.log("Count for this number: " + counts[tmpNumber][KEY_HIT_COUNT]);
+        console.log("Normalized confidence: " + tmpConfidenceEqualized);
+        console.log("");
+
+    }
+
+    console.log("Total Confidence: " + totalConfidence);
+    console.log("\n\n\n");
+
+
+    if (lightSensorIsBlocked && !isRunning) {
+        //console.log("I'm getting here?");
+
+        // if our leading digit isn't a 0, it means we have broken teeth, so don't
+        // bother parsing the number at all, it doesn't matter.
+        if (brokenTooth) {
             val = 8;
         }
-        // if (lastDetected != val) {
-            // lastDetected = val;
-            runAnimation(val);
-        // }
+        else {
+            var val = parseInt(leadNumber)%10;
+            if (val == null){
+                val = 8;
+            }
+            else if(val == 9){
+                val = 6;
+            }
+            else if (val < 1 || val > 7) {
+                val = 8;
+            }
+        }
+
+        runAnimation(val);
+
+            // to avoid re-entrancy problems with new values coming in for the "lead"
+            // numbers in the loop before the telemetry can finish sending.
+        var telemetryNumber = leadNumber;
+        var telemetryConfidence = leadConfidence;
+        var telemetryInference = avgInferenceTime;
+
+            // send the data off to the stats server
+        var addStat = statsDB.collection('demos').doc("SortingDemo").collection('sessions').add({
+            start: firestoreAdmin.firestore.Timestamp.fromDate(new Date(demoStartTime)),
+            end: firestoreAdmin.firestore.Timestamp.fromDate(new Date(Date.now()))
+        });
+
+        // send the telemetry for what chute was hit
+        var longTermCollectionName = "next2019-test";
+        var longTermTelemetryDoc = telemetryDB.collection("telemetry-long-term")
+                                            .doc("events")
+                                            .collection(longTermCollectionName);
+        var addTelemetry = longTermTelemetryDoc.add({
+            number: telemetryNumber,
+            confidence: telemetryConfidence,
+            inference_time: telemetryInference,
+            timestamp: Date.now()
+        });
+
+        var liveTelemetryDoc = "chutes-test";
+        var liveInferenceDoc = "live-inference";
+        var liveRef = telemetryDB.collection("telemetry-live-count")
+                                 .doc(liveTelemetryDoc);
+        var liveInferenceRef = telemetryDB.collection("telemetry-live-count")
+                                          .doc(liveInferenceDoc);
+        liveInferenceRef.update({time: telemetryInference,
+                                 number: telemetryNumber});
+        var telemetryTransaction = telemetryDB.runTransaction(t => {
+            return t.get(liveRef)
+                .then(doc => {
+                    // increment the appropriate value
+                    var docData = doc.data();
+                    /*
+                        TODO: Add in logic around defective gears once we have
+                        that working. Until then, we're going to just consider
+                        numbers written because we don't have that chunk in yet.
+                        Once it is, then that may circumvent this switch statement
+                    */
+                    switch(telemetryNumber) {
+                        case 1:
+                            var newVal = docData.one + 1;
+                            t.update(liveRef, {one: newVal});
+                            break;
+                        case 2:
+                            var newVal = docData.two + 1;
+                            t.update(liveRef, {two: newVal});
+                            break;
+                        case 3:
+                            var newVal = docData.three + 1;
+                            t.update(liveRef, {three: newVal});
+                            break;
+                        case 4:
+                            var newVal = docData.four + 1;
+                            t.update(liveRef, {four: newVal});
+                            break;
+                        case 5:
+                            var newVal = docData.five + 1;
+                            t.update(liveRef, {five: newVal});
+                            break;
+                        case 6:
+                            var newVal = docData.six + 1;
+                            t.update(liveRef, {six: newVal});
+                            break;
+                        case 7:
+                            var newVal = docData.seven + 1;
+                            t.update(liveRef, {seven: newVal});
+                            break;
+                        default:
+                            var newVal = docData.X + 1;
+                            t.update(liveRef, {X: newVal});
+                            break;
+                    }
+                });
+        }).then(result => {
+            //console.log('Updated telemetry');
+        }).catch(err => {
+            console.log('Telemetry database update failed');
+        });
     }
+    else if (isRunning) {
+        // TODO: There's a bug here, if we get a post event, but we're
+        // running, it means we haven't reset yet but we have post events
+        // coming in and we probably need to handle them? Maybe? This might
+        // be the bug on why we're stalling and not continuing until we
+        // jiggle the puck
+        console.log("I'm ready to go, and got some inferences in, but the demo is running still.");
+    }
+
+    // reset our variables to be ready to start gathering the next 5
+    inferenceCount   = 0;
+    counts           = {};
+    totalConfidence  = 0;
+    avgInferenceTime = 0;
 });
 
 http.listen(port, function() {
     console.log('listening on *:' + port);
 });
-var is_ready = false;
-var is_running = false;
+var lightSensorIsBlocked = false;
+var isRunning = false;
 
 var five = require("johnny-five");
 var board = new five.Board();
@@ -114,25 +346,27 @@ var board = new five.Board();
 var currentPos = 4;
 var expectedChuteDelay = 1000;
 function runAnimation(val) {
-    is_running = true;
+    //console.log("Setting isRunning to true now");
+    isRunning = true;
 
     minTime = (parseInt(val)/8)*1000;
     
     expectedChuteDelay = (Math.abs(parseInt(val)-currentPos)*100);
     expectedToChuteDelay = ((parseInt(val)-1)/7)*2000;
     bestDelay = Math.max(expectedChuteDelay-expectedToChuteDelay, 1)
+/*
     console.log('expectedChuteDelay: '+expectedChuteDelay);
     console.log('expectedToChuteDelay: '+expectedToChuteDelay);
     console.log('bestDelay: '+bestDelay);
-    
+*/    
     // longestDelay = Math.max(expectedChuteDelay, expectedToChuteDelay);
     // servos["chute"].j5Obj.to(servos["chute"].positions[1]);
     // setTimeout(function() {
-        console.log(val);
+        // console.log(val);
         // console.log(servos[1].j5Obj);
         for (var i = 1; i <= 8; i++) {
             if (servos[i].j5Obj) {
-                console.log(i);
+                //console.log(i);
                 var pos = parseInt(servos[i].close);
                 if (i == parseInt(val))
                     pos = parseInt(servos[i].open);
@@ -153,16 +387,17 @@ function runAnimation(val) {
         if (servos["chute"].j5Obj) {
             if(currentPos < val){
                 servos["chute"].j5Obj.to(servos["chute"].positions[val].right);
-                console.log("to: "+servos["chute"].positions[val].right);
+                //console.log("to: "+servos["chute"].positions[val].right);
             }else{
                 servos["chute"].j5Obj.to(servos["chute"].positions[val].left);
-                console.log("to: "+servos["chute"].positions[val].left);
+                //console.log("to: "+servos["chute"].positions[val].left);
             }
             currentPos = val;
         }
         clearTimeout(timeoutFunction);
         timeoutFunction = setTimeout(function() {
-            is_running = false;
+            isRunning = false;
+            //console.log("Setting isRunning to false now");
         }, bestDelay+3000);
     // }, 2000);
 }
@@ -226,18 +461,24 @@ async.parallel([
             process.exit();
         } else {
             Object.keys(servos).forEach(function(key) {
-                console.log(servos[key].props);
+                //console.log(servos[key].props);
                 servos[key].j5Obj = new five.Servo(servos[key].props);
             });
             Object.keys(sensors).forEach(function(key) {
                 var sensor = new five.Light("A" + key);
                 if (key == 0) {
                 sensor.on("change", function() {
-                    // console.log(this.level);
+                    //console.log(this.value);
                     if (this.value > lightThreshold) {
-                        is_ready = false;
+//                        if (lightSensorIsBlocked == true) {
+//                            console.log("Changing lightSensorIsBlocked value from false to true");
+//                        }
+                        lightSensorIsBlocked = false;
                     } else {
-                        is_ready = true;
+//                        if (lightSensorIsBlocked == false) {
+//                            console.log("Changing lightSensorIsBlocked value from true to false");
+//                        }
+                        lightSensorIsBlocked = true;
                     }
                 });
 
@@ -247,7 +488,8 @@ async.parallel([
                             sensor.active = true;
                         } else if (sensor.is_active && minTime > (new Date().getTime() - triggeredTime) && "A"+currentPos == this.pin) {
                             sensor.active = false;
-                            is_running = false;
+                            isRunning = false;
+//                            console.log("Looks like we have been waiting too long, I'm resetting isRunning to false.");
                             clearTimeout(timeoutFunction);
                         }
                     });

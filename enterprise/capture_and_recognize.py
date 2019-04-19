@@ -5,14 +5,15 @@ from PIL import Image
 from edgetpu.classification.engine import ClassificationEngine
 import json
 import numpy as np
-import urllib
+import time
+from urllib import request
 
 
 # Use a context manager to make sure the video device is released.
 @contextlib.contextmanager
 def video_capture(video_device_index):
     video_device_name = '/dev/video{}'.format(video_device_index)
-    camera = cv.Camera(video_device_name)
+    camera = Camera(video_device_name)
     try:
         yield camera
     finally:
@@ -23,11 +24,11 @@ def capture(camera):
     try:
         image_bytes = camera.get_frame()
         return image_bytes
-    else:
+    except:
         raise ValueError('Failed to capture image.')
 
 
-def image_bytes_to_image(image_bytes):
+def image_bytes_to_image(image_bytes, width, height):
     image = Image.frombytes('RGB', (width, height), image_bytes, 'raw', 'RGB')
 
     return image
@@ -35,13 +36,22 @@ def image_bytes_to_image(image_bytes):
 
 def recognize(engine, array):
     # ClassifyWithImage returns a list of top_k pairs of (class_label: int, confidence_score: float) whose confidence_scores are greater than threshold.
-    label_scores = engine.ClassifyWithImage(array, threshold=0.3, top_k=2)
+    start_time = time.time()
+    label_scores = engine.ClassifyWithImage(array, threshold=0.5, top_k=3)
+    inference_time = time.time() - start_time
 
-    return label_scores
+    return label_scores, inference_time
 
 
-def format_results(label_scores):
-    data = json.dumps(recognition_results)
+def format_results(label_scores, inference_time):
+    # keeping only the top result
+    label, score = label_scores[0]
+    data_dict = {
+        'number': int(label),
+        'confidence': float(score),
+        'inference_time': float(inference_time)
+    }
+    data = json.dumps(data_dict)
 
     return data
 
@@ -50,10 +60,10 @@ def format_results(label_scores):
 def post(url, data):
     print(data)
 
-    request = urllib.request.Request(url)
-    request.add_header('Content-Type', 'application/json')
+    req = request.Request(url, data=str.encode(data))
+    req.add_header('Content-Type', 'application/json')
     try:
-        response = urllib.request.urlopen(request, data)
+        response = request.urlopen(req)
         return response
     except Exception as e:
         print('Failed to post to server {}: {}'.format(url, repr(e)))
@@ -62,15 +72,25 @@ def post(url, data):
 def main(args):
     engine = ClassificationEngine(args.model_file)
 
-    with video_capture(args.video_device_index) as cap:
+    with video_capture(args.video_device_index) as camera:
         while True:
             # The while loop go through the steps of capture, recognize, and post, along with data transformation steps.
             try:
-                image_bytes = capture(cap)
-                image = image_bytes_to_image(image_bytes)
-                label_scores = recognize(engine, image)
-                data = format_results(label_scores)
+                image_bytes = capture(camera)
+                image = image_bytes_to_image(image_bytes, camera.width, camera.height)
+
+                # save a jpeg for video feed
+                image.save('frame.jpeg')
+
+                label_scores, inference_time = recognize(engine, image)
+                if len(label_scores) == 0:
+                    continue
+
+                print(label_scores, inference_time)
+                
+                data = format_results(label_scores, inference_time)
                 response = post(args.server_url, data)
+                print(response)
 
             except KeyboardInterrupt:
                 break
@@ -82,8 +102,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--model-file', default='edgetpu_model.tflite')
-    parser.add_argument('--server-url', default='192.168.42.100:8080')
+    parser.add_argument('--model-file', default='edgetpu_model.tflite.2_27_2019')
+    parser.add_argument('--server-url', default='http://192.168.42.100:8080')
     parser.add_argument('--video-device-index', default=1)
 
     args, _ = parser.parse_known_args()
