@@ -7,6 +7,7 @@ import android.view.View;
 
 import com.example.sorting_demo.object_detection.BarChartActivity;
 import com.example.sorting_demo.object_detection.DetectorActivity;
+import com.example.sorting_demo.object_detection.LiveInferenceActivity;
 
 public class MainActivity extends AppCompatActivity {
     public static final String TF_LITE_MODEL = "models_on_device.tflite";
@@ -33,6 +34,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(v.getContext(), BarChartActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        findViewById(R.id.button_liveinference).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(v.getContext(), LiveInferenceActivity.class);
                 startActivity(intent);
             }
         });
