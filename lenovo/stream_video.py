@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw
 import threading
 from collections import deque
 import struct
+import io
 
 HOST = '0.0.0.0'
 PORT = 54321
@@ -11,10 +12,12 @@ PORT = 54321
 image_bytes_length = 640*480*3
 bbox_bytes_length = 5*8
 
-# the socket client sends two bounding boxes and scores
-data_bytes_length = image_bytes_length + 2*bbox_bytes_length
+# The socket client sends one bounding box and score.
+data_bytes_length = image_bytes_length + bbox_bytes_length
 
 app = Flask(__name__)
+
+# The buffer that holds the most recent data bytes.
 d = deque(maxlen=1)
 
 def server_worker(host, port, d):
@@ -45,30 +48,23 @@ def index():
 
 
 def to_jpeg(image_bytes, bbox_bytes):
-    # process bounding box and score
-    b1, b2 = bbox_bytes[bbox_bytes_length:], bbox_bytes[:bbox_bytes_length]
-
-    # unpack to list of floats
-    f1 = []
+    # Unpack the bytes to a list of floats.
+    f = []
     for i in range(5):
-        float_bytes = b1[8*i:8*(i+1)]
+        # Each float was encoded into 8 bytes.
+        float_bytes = bbox_bytes[8*i:8*(i+1)]
         float_value, = struct.unpack('!d', float_bytes)
-        f1.append(float_value)
-        
-    f2 = []
-    for i in range(5):
-        float_bytes = b2[8*i:8*(i+1)]
-        float_value, = struct.unpack('!d', float_bytes)
-        f2.append(float_value)
+        f.append(float_value)
 
-    import io
+    # This buffer holds the JPEG image which will be a single frame of the streaming video.
     bytes_buffer = io.BytesIO()
 
     image = Image.frombytes('RGB', (640, 480), image_bytes, 'raw', 'RGB')
 
-    # draw a box showing the part of the image sent to the model, with corner coordinates (0, 0) and (224, 224)
+    # Draw a box showing the part of the image that was sent to the model, with corner coordinates (0, 0) and (224, 224).
     x1, y1, x2, y2 = (0.0, 0.0, 224.0, 224.0)
 
+    # These offsets invert the cropping in recognize.py:image_bytes_to_image.
     x1 += 258
     x2 += 258
     y1 += 148
@@ -78,27 +74,27 @@ def to_jpeg(image_bytes, bbox_bytes):
     draw.line(xy=[(x1, y1), (x2, y1), (x2, y2), (x1, y2), (x1, y1)], fill=128, width=5)
     del draw
 
-    # draw bounding boxes
-    for f in [f1, f2]:
-        x1, y1, x2, y2, score = f
-        if score < 0.5:
-            continue
+    # Draw an additional bounding box if a missing tooth was detected.
+    x1, y1, x2, y2, score = f
+    if score < 0.5:
+        continue
 
-        # the coordinates were normalized.  transform to the pixel scale before drawing
-        x1 *= 224
-        x2 *= 224
-        y1 *= 224
-        y2 *= 224
+    # The coordinates from the DetectionEngine were normalized.  Transform to the pixel scale before drawing.
+    x1 *= 224
+    x2 *= 224
+    y1 *= 224
+    y2 *= 224
 
-        # place the cropped (224, 224) image back in the (640, 480) image
-        x1 += 258
-        x2 += 258
-        y1 += 148
-        y2 += 148
+    # Place the cropped (224, 224) image back in the (640, 480) image at the corret position.
+    x1 += 258
+    x2 += 258
+    y1 += 148
+    y2 += 148
 
-        draw = ImageDraw.Draw(image)
-        draw.line(xy=[(x1, y1), (x2, y1), (x2, y2), (x1, y2), (x1, y1)], fill=128, width=5)
+    draw = ImageDraw.Draw(image)
+    draw.line(xy=[(x1, y1), (x2, y1), (x2, y2), (x1, y2), (x1, y1)], fill=128, width=5)
 
+    # Write image to the buffer and return the JPEG bytes.
     image.save(bytes_buffer, format='JPEG')
     frame = bytes_buffer.getvalue()
 
@@ -109,6 +105,7 @@ def gen():
     global d
     while True:
         try:
+            # An error is raised if the buffer d has no data.
             data_bytes = d.popleft()
             image_bytes = data_bytes[:image_bytes_length]
             bbox_bytes = data_bytes[image_bytes_length:]
