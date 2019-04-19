@@ -28,6 +28,10 @@ public class LiveInferenceFragment extends Fragment {
     private static final String COLLECTION_NAME = "telemetry-live-count";
     private static final String SUMMARIES_DOCUMENT_ID = "firestore_live_inference_id";
     private String summariesDocumentId = "model-inference"; // this value is updated form Remote Config
+    private static final String TABLE_DESCRIPTION = "number: 0-7 == valid\n" +
+            "number: 10-17 == 1 tooth missing\n" +
+            "number: 20-27 == 2 teeth missing\n" +
+            "number: 8, 18, 28 == invalid";
 
 
     @Override
@@ -42,6 +46,8 @@ public class LiveInferenceFragment extends Fragment {
         View v = inflater.inflate(R.layout.fragment_live_inference, container, false);
 
         loadRemoteConfig(v);
+
+        ((TextView) v.findViewById(R.id.textview_logs_table_description)).setText(TABLE_DESCRIPTION);
 
         return v;
     }
@@ -99,11 +105,11 @@ public class LiveInferenceFragment extends Fragment {
 
 
                             String formattedText = String.format(
-                                    "<font color='red'>%s</font><font color='black'>%s</font>",
+                                    "<h3>Model Output:</h3><font color='red'>%s</font><font color='black'>%s</font>",
                                     throwawayLogs,
                                     keepLogs);
 
-                            ((TextView) v.findViewById(R.id.live_inference_logs_textview)).setText(
+                            ((TextView) v.findViewById(R.id.textview_live_inference_logs)).setText(
                                     Html.fromHtml(formattedText));
                         } else {
                             Log.d(TAG, "Current data: null");
