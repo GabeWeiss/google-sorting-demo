@@ -79,8 +79,10 @@ def recognize(od_engine, digit_engine, image):
 
     print('{} missing teeth detected'.format(n_missing))
 
+    # If there is no missing tooth, label_score is just the top digit classification result.
     if n_missing == 0:
-        return digit_label_scores[0], inference_time, None
+        label_score = digit_label_scores[0]
+        return label_score, inference_time, None
     
     # Construct label_score when there is a missing tooth:
     # If a gear has a written '5' and is missing at least one tooth, then it is labeled as '15'.
