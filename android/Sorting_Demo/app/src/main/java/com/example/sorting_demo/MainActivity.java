@@ -10,12 +10,12 @@ import com.example.sorting_demo.object_detection.DetectorActivity;
 import com.example.sorting_demo.object_detection.LiveInferenceActivity;
 
 public class MainActivity extends AppCompatActivity {
-    public static final String TF_LITE_MODEL = "models_on_device.tflite";
+    public static final String DIGI_TF_LITE_MODEL = "model_digit_bt_4_7_2019.tflite"; //"models_on_device.tflite";
+    public static final String GEAR_TOOTH_TF_LITE_MODEL = "model_od_4_7_2019.tflite";
     public static final int TF_LITE_OBJECT_DETECTION_IMAGE_DIMENSION = 224;
-    public static final int NUM_RESULTS = 30; // How many results from Object Detection to get
     public static int gearindex = -1;
     public static float confidence = 0.0f;
-    public static boolean valid = true;
+    public static String valid = "unknown";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
