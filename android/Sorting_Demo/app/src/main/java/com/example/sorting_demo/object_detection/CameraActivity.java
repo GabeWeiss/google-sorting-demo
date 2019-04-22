@@ -76,8 +76,6 @@ public abstract class CameraActivity extends AppCompatActivity
 
     public int CANVAS_WIDTH = 1080; // Get the width of the Canvas that is shown on screen
     public int CANVAS_HEIGHT = 1731; // Get the height of the Canvas that is shown on screen
-    public float PERCENTAGE = 0.1733f;
-    public float CANVAS_HEIGHT_PERCENTAGE = 1.0f - PERCENTAGE; // Remove the part that is taken by the black bar.
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -89,7 +87,8 @@ public abstract class CameraActivity extends AppCompatActivity
         CANVAS_WIDTH = displayMetrics.widthPixels;
 
         classifier = Classifier.create(getAssets(),
-                MainActivity.TF_LITE_MODEL,
+                MainActivity.DIGI_TF_LITE_MODEL,
+                MainActivity.GEAR_TOOTH_TF_LITE_MODEL,
                 MainActivity.TF_LITE_OBJECT_DETECTION_IMAGE_DIMENSION);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);

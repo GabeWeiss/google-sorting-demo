@@ -3,7 +3,9 @@ package com.example.sorting_demo.object_detection;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Trace;
+import android.util.Log;
 
 import com.example.sorting_demo.MainActivity;
 
@@ -11,10 +13,13 @@ import org.tensorflow.lite.Interpreter;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Wrapper for frozen detection models trained using the Tensorflow Object Detection API:
@@ -23,17 +28,23 @@ import java.nio.channels.FileChannel;
 public class Classifier {
 
     // Only return this many results.
-    private static final int NUM_DETECTIONS = 30;
+    private static final int NUM_DETECTIONS = 10; // 30
 
     // Config values.
     private int inputSize = 224;
 
     // Pre-allocated buffers.
     private static int[] intValues;
-    private static byte[][] outputScores;
+    private static byte[][] outputDigitScores;
+
+    private float[][][] outputGearToothLocations;
+    private float[][] outputGearToothClasses;
+    private float[][] outputGearToothScores;
+    private float[] numGearToothDetections;
 
     protected ByteBuffer imgData = null;
-    private Interpreter tfLite;
+    private Interpreter tfLiteDigitClassifier;
+    private Interpreter tfLiteGearToothDetector;
 
     /**
      * Memory-map the model file in Assets.
@@ -52,11 +63,12 @@ public class Classifier {
      * Initializes a native TensorFlow session for classifying images.
      *
      * @param assetManager  The asset manager to be used to load assets.
-     * @param modelFilename The filepath of the model GraphDef protocol buffer.
+     * @param digitModelFilename The filepath of the model GraphDef protocol buffer.
      */
     public static Classifier create(
             final AssetManager assetManager,
-            final String modelFilename,
+            final String digitModelFilename,
+            final String gearToothModelFilename,
             final int inputSize) {
         final Classifier d = new Classifier();
 
@@ -64,7 +76,10 @@ public class Classifier {
         d.inputSize = inputSize;
 
         try {
-            d.tfLite = new Interpreter(loadModelFile(assetManager, modelFilename));
+            d.tfLiteDigitClassifier = new Interpreter(
+                    loadModelFile(assetManager, digitModelFilename));
+            d.tfLiteGearToothDetector = new Interpreter(
+                    loadModelFile(assetManager, gearToothModelFilename));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -74,7 +89,7 @@ public class Classifier {
                 ByteBuffer.allocateDirect(1 * d.inputSize * d.inputSize * 3 * 1);
         d.imgData.order(ByteOrder.nativeOrder());
         d.intValues = new int[d.inputSize * d.inputSize];
-        d.outputScores = new byte[1][NUM_DETECTIONS];
+        d.outputDigitScores = new byte[1][NUM_DETECTIONS];
         return d;
     }
 
@@ -101,21 +116,24 @@ public class Classifier {
         }
         Trace.endSection(); // preprocessBitmap
 
+        // Run the inference call.
+        classifyGearDigit();
+        imgData.rewind();
+        detectMissingGearTeeth();
+        Trace.endSection();
+    }
+
+    private void classifyGearDigit() {
         // Copy the input data into TensorFlow.
-        Trace.beginSection("feed");
-        outputScores = new byte[1][NUM_DETECTIONS];
+        outputDigitScores = new byte[1][NUM_DETECTIONS];
 
         // Run the inference call.
-        Trace.beginSection("run");
-        tfLite.run(imgData, outputScores);
-        Trace.endSection();
-
-        Trace.endSection();
+        tfLiteDigitClassifier.run(imgData, outputDigitScores);
 
         byte max = 0;
         int maxIndex = 0;
-        for (int i = 0; i < MainActivity.NUM_RESULTS; i++) {
-            byte confidence = outputScores[0][i];
+        for (int i = 0; i < NUM_DETECTIONS; i++) {
+            byte confidence = outputDigitScores[0][i];
             if (confidence > max) {
                 max = confidence;
                 maxIndex = i;
@@ -124,6 +142,44 @@ public class Classifier {
 
         MainActivity.gearindex = maxIndex % 10;
         MainActivity.confidence = max;
-        MainActivity.valid = maxIndex < 10;
+    }
+
+    private void detectMissingGearTeeth() {
+            outputGearToothLocations = new float[1][NUM_DETECTIONS][4];
+            outputGearToothClasses = new float[1][NUM_DETECTIONS];
+            outputGearToothScores = new float[1][NUM_DETECTIONS];
+            numGearToothDetections = new float[1];
+
+            Object[] inputArray = {imgData};
+            Map<Integer, Object> outputMap = new HashMap<>();
+            outputMap.put(0, outputGearToothLocations);
+            outputMap.put(1, outputGearToothClasses);
+            outputMap.put(2, outputGearToothScores);
+            outputMap.put(3, numGearToothDetections);
+
+            tfLiteGearToothDetector.runForMultipleInputsOutputs(inputArray, outputMap);
+
+            float max = 0;
+            int maxIndex = 0;
+            for (int i = 0; i < NUM_DETECTIONS; i++) {
+                float confidence = outputGearToothScores[0][i];
+                if (confidence > max) {
+                    max = confidence;
+                    maxIndex = i;
+                }
+            }
+
+
+            // The object detection model has two labels:
+            // 0: missing tooth
+            // 1: gear
+            MainActivity.valid = "unknown";
+            if (max > 0.6) {
+                if (outputGearToothClasses[0][maxIndex] == 0) {
+                    MainActivity.valid = "false";
+                } else {
+                    MainActivity.valid = "true";
+                }
+            }
     }
 }

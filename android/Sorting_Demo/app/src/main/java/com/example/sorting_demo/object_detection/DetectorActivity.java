@@ -109,7 +109,7 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
 
                         lines.add(String.format("Detected Number: %d",MainActivity.gearindex));
                         lines.add(String.format("Confidence: %.2f", MainActivity.confidence));
-                        lines.add(String.format("Valid Gear: %b", MainActivity.valid));
+                        lines.add(String.format("Valid Gear: %s", MainActivity.valid));
                         lines.add("Inference time: " + lastProcessingTimeMs + "ms");
 
                         borderedText.drawLines(canvas, 10, canvas.getHeight() - 10, lines);
@@ -153,7 +153,7 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                         lines.add("Frame: " + canvas2.getWidth() + "x" + canvas2.getHeight());
                         lines.add("Crop: " + copy.getWidth() + "x" + copy.getHeight());
                         lines.add("View: " + canvas.getWidth() + "x" + canvas.getHeight());
-                        lines.add(String.format("#: %d - C: %.2f - V: %b",
+                        lines.add(String.format("#: %d - C: %.2f - V: %s",
                                 MainActivity.gearindex,
                                 MainActivity.confidence,
                                 MainActivity.valid));
