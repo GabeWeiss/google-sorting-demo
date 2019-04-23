@@ -18,9 +18,9 @@ data_bytes_length = image_bytes_length + bbox_bytes_length
 app = Flask(__name__)
 
 # The buffer that holds the most recent data bytes.
-d = deque(maxlen=1)
+stream_buffer = deque(maxlen=1)
 
-def server_worker(host, port, d):
+def server_worker(host, port, stream_buffer):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((host, port))
         s.listen()
@@ -35,7 +35,7 @@ def server_worker(host, port, d):
                     # image bytes and bounding box score bytes
                     data = conn.recv(data_bytes_length)
                     if data and len(data) == data_bytes_length:
-                        d.append(data)
+                        stream_buffer.append(data)
 
                 except Exception as e:
                     print(repr(e))
@@ -101,12 +101,12 @@ def to_jpeg(image_bytes, bbox_bytes):
     return frame
 
 
-def gen():
-    global d
+def stream_gen():
+    global stream_buffer
     while True:
         try:
-            # An error is raised if the buffer d has no data.
-            data_bytes = d.popleft()
+            # An error is raised if stream_buffer has no data.
+            data_bytes = stream_buffer.popleft()
             image_bytes = data_bytes[:image_bytes_length]
             bbox_bytes = data_bytes[image_bytes_length:]
         except Exception as e:
@@ -117,12 +117,12 @@ def gen():
 
 @app.route('/video')
 def video():
-    return Response(gen(),
+    return Response(stream_gen(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 if __name__ == '__main__':
-    thread = threading.Thread(target=server_worker, args=(HOST, PORT, d))
+    thread = threading.Thread(target=server_worker, args=(HOST, PORT, stream_buffer))
 
     thread.start()
 
