@@ -17,42 +17,17 @@ data_bytes_length = image_bytes_length + bbox_bytes_length
 
 app = Flask(__name__)
 
-# The buffer that holds the most recent data bytes.
+# The buffer that holds the most recent JPEG frame.
 stream_buffer = deque(maxlen=1)
 
 # global flag
 should_capture = False
 
-# The buffer that holds the most captured frame (as JPEG), which is either the first frame after the should_capture flag is set, or the latest frame showing a missing tooth.
+# The buffer that holds the most recent captured JPEG frame, which is either the first frame after the should_capture flag is set, or the latest frame showing a missing tooth.
 capture_buffer = deque(maxlen=1)
 
-def server_worker(host, port, stream_buffer):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((host, port))
-        s.listen()
 
-        print('Waiting for connection.')
-        conn, addr = s.accept()
-
-        with conn:
-            print('Client: {}'.format(addr))
-            while True:
-                try:
-                    # image bytes and bounding box score bytes
-                    data = conn.recv(data_bytes_length)
-                    if data and len(data) == data_bytes_length:
-                        stream_buffer.append(data)
-
-                except Exception as e:
-                    print(repr(e))
-                    break
-
-
-@app.route('/')
-def index():
-    return 'OK', 200
-
-
+# This functions returns an additional flag indicating whether a missing tooth bounding box has been drawn.
 def to_jpeg(image_bytes, bbox_bytes):
     # Unpack the bytes to a list of floats.
     f = []
@@ -82,7 +57,9 @@ def to_jpeg(image_bytes, bbox_bytes):
 
     # Draw an additional bounding box if a missing tooth was detected.
     x1, y1, x2, y2, score = f
+    bbox_drawn = False
     if score > 0.5:
+        bbox_drawn = True
         # The coordinates from the DetectionEngine were normalized.  Transform to the pixel scale before drawing.
         x1 *= 224
         x2 *= 224
@@ -102,27 +79,104 @@ def to_jpeg(image_bytes, bbox_bytes):
     image.save(bytes_buffer, format='JPEG')
     frame = bytes_buffer.getvalue()
 
-    return frame
+    return frame, bbox_drawn
 
 
+def server_worker(host, port, stream_buffer):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((host, port))
+        s.listen()
+
+        print('Waiting for connection.')
+        conn, addr = s.accept()
+
+        with conn:
+            print('Client: {}'.format(addr))
+            while True:
+                try:
+                    # image bytes and bounding box score bytes
+                    data = conn.recv(data_bytes_length)
+                    if data and len(data) == data_bytes_length:
+
+                        image_bytes = data[:image_bytes_length]
+                        bbox_bytes = data[image_bytes_length:]
+
+                        frame, bbox_drawn = to_jpeg(image_bytes, bbox_bytes)
+
+                        stream_buffer.append(frame)
+
+                        # update the frame in capture_buffer if:
+                        # (a) should_capture is True and capture_buffer is empty; or
+                        # (b) should_capture is True and bbox_drawn is True
+                        should_update = should_capture and (bbox_drawn or not capture_buffer)
+
+                        if should_update:
+                            capture_buffer.append(frame)
+
+                except Exception as e:
+                    print(repr(e))
+                    break
+
+
+# TODO: refactor into make_generator, since in both cases we only need to peek.
 def stream_gen():
     global stream_buffer
+
     while True:
-        try:
-            # An error is raised if stream_buffer has no data.
-            data_bytes = stream_buffer.popleft()
-            image_bytes = data_bytes[:image_bytes_length]
-            bbox_bytes = data_bytes[image_bytes_length:]
-        except Exception as e:
+        if stream_buffer:
+            frame = stream_buffer.popleft()
+        else:
             continue
-        frame = to_jpeg(image_bytes, bbox_bytes)
+
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+
+def capture_gen():
+    global capture_buffer
+
+    while True:
+        if capture_buffer:
+            # peek instead of pop, since capture buffer is of not updated
+            frame = capture_buffer[-1]
+        else:
+            continue
+
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
 
 @app.route('/video')
 def video():
     return Response(stream_gen(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+@app.route('/capture')
+def capture():
+    return Response(capture_gen(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+@app.route('/start_capture')
+def start_capture():
+    global should_capture
+    should_capture = True
+
+    return 'OK', 200
+
+
+@app.route('/stop_capture')
+def stop_capture():
+    global should_capture
+    should_capture = False
+
+    return 'OK', 200
+
+
+@app.route('/')
+def index():
+    return 'OK', 200
 
 
 if __name__ == '__main__':
