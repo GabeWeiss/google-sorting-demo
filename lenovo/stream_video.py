@@ -118,27 +118,11 @@ def server_worker(host, port, stream_buffer):
                     break
 
 
-# TODO: refactor into make_generator, since in both cases we only need to peek.
-def stream_gen():
-    global stream_buffer
-
+def make_generator(buffer_):
     while True:
-        if stream_buffer:
-            frame = stream_buffer.popleft()
-        else:
-            continue
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-
-def capture_gen():
-    global capture_buffer
-
-    while True:
-        if capture_buffer:
-            # peek instead of pop, since capture buffer is of not updated
-            frame = capture_buffer[-1]
+        if buffer_:
+            # peek instead of pop, since the buffer may not always be updated
+            frame = buffer_[-1]
         else:
             continue
 
@@ -148,13 +132,15 @@ def capture_gen():
 
 @app.route('/video')
 def video():
-    return Response(stream_gen(),
+    generator = make_generator(stream_buffer)
+    return Response(generator,
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @app.route('/capture')
 def capture():
-    return Response(capture_gen(),
+    generator = make_generator(capture_buffer)
+    return Response(generator,
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
