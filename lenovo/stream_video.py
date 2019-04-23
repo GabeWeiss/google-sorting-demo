@@ -20,6 +20,12 @@ app = Flask(__name__)
 # The buffer that holds the most recent data bytes.
 stream_buffer = deque(maxlen=1)
 
+# global flag
+should_capture = False
+
+# The buffer that holds the most captured frame (as JPEG), which is either the first frame after the should_capture flag is set, or the latest frame showing a missing tooth.
+capture_buffer = deque(maxlen=1)
+
 def server_worker(host, port, stream_buffer):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((host, port))
@@ -76,23 +82,21 @@ def to_jpeg(image_bytes, bbox_bytes):
 
     # Draw an additional bounding box if a missing tooth was detected.
     x1, y1, x2, y2, score = f
-    if score < 0.5:
-        continue
+    if score > 0.5:
+        # The coordinates from the DetectionEngine were normalized.  Transform to the pixel scale before drawing.
+        x1 *= 224
+        x2 *= 224
+        y1 *= 224
+        y2 *= 224
 
-    # The coordinates from the DetectionEngine were normalized.  Transform to the pixel scale before drawing.
-    x1 *= 224
-    x2 *= 224
-    y1 *= 224
-    y2 *= 224
+        # Place the cropped (224, 224) image back in the (640, 480) image at the corret position.
+        x1 += 258
+        x2 += 258
+        y1 += 148
+        y2 += 148
 
-    # Place the cropped (224, 224) image back in the (640, 480) image at the corret position.
-    x1 += 258
-    x2 += 258
-    y1 += 148
-    y2 += 148
-
-    draw = ImageDraw.Draw(image)
-    draw.line(xy=[(x1, y1), (x2, y1), (x2, y2), (x1, y2), (x1, y1)], fill=128, width=5)
+        draw = ImageDraw.Draw(image)
+        draw.line(xy=[(x1, y1), (x2, y1), (x2, y2), (x1, y2), (x1, y1)], fill=128, width=5)
 
     # Write image to the buffer and return the JPEG bytes.
     image.save(bytes_buffer, format='JPEG')
