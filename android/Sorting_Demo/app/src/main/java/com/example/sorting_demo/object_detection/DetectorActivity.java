@@ -25,6 +25,7 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.ImageReader;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.util.Size;
 import android.util.TypedValue;
 
@@ -33,9 +34,16 @@ import com.example.sorting_demo.object_detection.OverlayView.DrawCallback;
 import com.example.sorting_demo.object_detection.env.BorderedText;
 import com.example.sorting_demo.object_detection.env.ImageUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.util.UUID;
 import java.util.Vector;
 
 import com.example.sorting_demo.R;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 /**
  * An activity that uses a TensorFlowMultiBoxDetector and ObjectTracker to detect and then track
@@ -195,6 +203,46 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                         final long startTime = SystemClock.uptimeMillis();
                         classifier.recognizeImage(croppedBitmap);
                         lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
+
+                        // *********************************
+                        if (uploadPhoto) {
+                            // Upload cropped image to Firestore
+                            FirebaseStorage storage = FirebaseStorage.getInstance();
+                            // Create a storage reference from our app
+                            StorageReference storageRef = storage.getReference();
+
+                            // Create a reference to "mountains.jpg"
+                            String filename = String.format("%s.jpg", UUID.randomUUID().toString());
+                            StorageReference mountainsRef = storageRef.child(filename);
+
+                            // Create a reference to 'images/mountains.jpg'
+                            StorageReference mountainImagesRef = storageRef.child(String.format("images/%s", filename));
+
+                            // While the file names are the same, the references point to different files
+                            mountainsRef.getName().equals(mountainImagesRef.getName());    // true
+                            mountainsRef.getPath().equals(mountainImagesRef.getPath());    // false
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                            byte[] data = baos.toByteArray();
+
+                            UploadTask uploadTask = mountainsRef.putBytes(data);
+                            uploadTask.addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception exception) {
+                                    // Handle unsuccessful uploads
+                                }
+                            }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                                @Override
+                                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                    // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
+                                    // ...
+                                }
+                            });
+                            uploadPhoto = false;
+                        }
+                        // END UPDATE cropped iamge to Firestore
+                        // *********************************
+
                         trackingOverlay.postInvalidate();
                         requestRender();
                         computingDetection = false;

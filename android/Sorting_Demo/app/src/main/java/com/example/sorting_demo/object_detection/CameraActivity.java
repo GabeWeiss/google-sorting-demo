@@ -38,6 +38,7 @@ import android.util.Log;
 import android.util.Size;
 import android.view.KeyEvent;
 import android.view.Surface;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -77,6 +78,8 @@ public abstract class CameraActivity extends AppCompatActivity
     public int CANVAS_WIDTH = 1080; // Get the width of the Canvas that is shown on screen
     public int CANVAS_HEIGHT = 1731; // Get the height of the Canvas that is shown on screen
 
+    public boolean uploadPhoto = false;
+
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(null);
@@ -94,6 +97,13 @@ public abstract class CameraActivity extends AppCompatActivity
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_camera);
+
+        findViewById(R.id.take_photo_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                uploadPhoto = true;
+            }
+        });
 
         if (hasPermission()) {
             setFragment();
