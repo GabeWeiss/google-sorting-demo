@@ -82,7 +82,7 @@ def to_jpeg(image_bytes, bbox_bytes):
     return frame, bbox_drawn
 
 
-def server_worker(host, port, stream_buffer):
+def server_worker(host, port, stream_buffer, capture_buffer):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((host, port))
         s.listen()
@@ -132,6 +132,7 @@ def make_generator(buffer_):
 
 @app.route('/video')
 def video():
+    print(len(stream_buffer))
     generator = make_generator(stream_buffer)
     return Response(generator,
                     mimetype='multipart/x-mixed-replace; boundary=frame')
@@ -166,7 +167,7 @@ def index():
 
 
 if __name__ == '__main__':
-    thread = threading.Thread(target=server_worker, args=(HOST, PORT, stream_buffer))
+    thread = threading.Thread(target=server_worker, args=(HOST, PORT, stream_buffer, capture_buffer))
 
     thread.start()
 
