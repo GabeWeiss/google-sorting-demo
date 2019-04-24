@@ -23,6 +23,8 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http, {
     wsEngine: 'ws'
 });
+// for issuing the GET requests
+const fetch = require("node-fetch");
 
 // Firestore initialization for the demo's telemetry
 const firestoreAdmin = require('firebase-admin');
@@ -171,14 +173,22 @@ app.post('/', function(req, res) {
     if (inferenceCount < INFERENCE_AVERAGE_COUNT) {
         ++inferenceCount;
 
+        // Need to store our model output for the mobile app to display
         var outputLine = `{ "number":"${gearNumber}", "confidence":${confidence}, "inference_time":${inference} }`;
         modelOutput.push(outputLine);
 
         // Throw away the first 'THROW_AWAY_COUNT' inferences to reduce noisiness from images
         // captured while puck is rolling.
         if (inferenceCount <= THROW_AWAY_COUNT) {
+
+            // if this is our last throw away, tell the capture server to start
+            // capturing and broadcasting our teeth image
+            if (inferenceCount == THROW_AWAY_COUNT) {
+                fetch("http://localhost:5000/start_capture");
+            }
             return;
         }
+
 
         avgInferenceTime += inference;
 
@@ -283,6 +293,10 @@ app.post('/', function(req, res) {
                 val = 8;
             }
         }
+
+        // right before we move the demo, tell the streaming capture to stop grabbing frames
+        // so we don't accidentally get a dropping gear image
+        fetch("http://localhost:5000/stop_capture");
 
         runAnimation(val);
 
