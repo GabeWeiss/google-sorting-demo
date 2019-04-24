@@ -132,7 +132,6 @@ def make_generator(buffer_):
 
 @app.route('/video')
 def video():
-    print(len(stream_buffer))
     generator = make_generator(stream_buffer)
     return Response(generator,
                     mimetype='multipart/x-mixed-replace; boundary=frame')
@@ -156,7 +155,10 @@ def start_capture():
 @app.route('/stop_capture')
 def stop_capture():
     global should_capture
+    global capture_buffer
+
     should_capture = False
+    capture_buffer.clear()
 
     return 'OK', 200
 
