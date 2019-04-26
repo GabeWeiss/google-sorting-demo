@@ -14,7 +14,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String GEAR_TOOTH_TF_LITE_MODEL = "model_od_4_7_2019.tflite";
     public static final int TF_LITE_OBJECT_DETECTION_IMAGE_DIMENSION = 224;
     public static int gearindex = -1;
-    public static float confidence = 0.0f;
+    public static double confidence = 0.0;
     public static String valid = "unknown";
 
     @Override
