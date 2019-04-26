@@ -118,8 +118,8 @@ public class Classifier {
 
         // Run the inference call.
         classifyGearDigit();
-        imgData.rewind();
-        detectMissingGearTeeth();
+//        imgData.rewind();
+//        detectMissingGearTeeth();
         Trace.endSection();
     }
 
@@ -130,10 +130,10 @@ public class Classifier {
         // Run the inference call.
         tfLiteDigitClassifier.run(imgData, outputDigitScores);
 
-        byte max = 0;
+        int max = 0;
         int maxIndex = 0;
         for (int i = 0; i < NUM_DETECTIONS; i++) {
-            byte confidence = outputDigitScores[0][i];
+            int confidence = outputDigitScores[0][i] & 0xFF;
             if (confidence > max) {
                 max = confidence;
                 maxIndex = i;
@@ -141,7 +141,11 @@ public class Classifier {
         }
 
         MainActivity.gearindex = maxIndex % 10;
-        MainActivity.confidence = max;
+        if (MainActivity.gearindex == 9) {
+            MainActivity.gearindex = 6;
+        }
+
+        MainActivity.confidence = max / 255.0;
     }
 
     private void detectMissingGearTeeth() {
