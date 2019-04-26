@@ -10,7 +10,7 @@ import com.example.sorting_demo.object_detection.DetectorActivity;
 import com.example.sorting_demo.object_detection.LiveInferenceActivity;
 
 public class MainActivity extends AppCompatActivity {
-    public static final String DIGI_TF_LITE_MODEL = "model_digit_bt_4_7_2019.tflite"; //"models_on_device.tflite";
+    public static final String DIGI_TF_LITE_MODEL = "model_digit_bt_4_26_2019.tflite"; //"models_on_device.tflite";
     public static final String GEAR_TOOTH_TF_LITE_MODEL = "model_od_4_7_2019.tflite";
     public static final int TF_LITE_OBJECT_DETECTION_IMAGE_DIMENSION = 224;
     public static int gearindex = -1;

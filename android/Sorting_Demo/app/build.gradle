@@ -44,7 +44,7 @@ dependencies {
 
     implementation 'com.google.firebase:firebase-core:16.0.8'
     implementation 'com.google.firebase:firebase-firestore:18.2.0'
-    implementation 'com.google.firebase:firebase-config:16.4.1'
+    implementation 'com.google.firebase:firebase-config:16.5.0'
 
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
 

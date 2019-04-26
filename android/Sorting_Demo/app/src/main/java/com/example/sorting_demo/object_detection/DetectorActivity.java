@@ -115,7 +115,7 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                         final Vector<String> lines = new Vector<String>();
                         lines.add("");
 
-                        lines.add(String.format("Detected Number: %d",MainActivity.gearindex));
+                        lines.add(String.format("Detected Number: %d", MainActivity.gearindex));
                         lines.add(String.format("Confidence: %.2f", MainActivity.confidence));
                         lines.add(String.format("Valid Gear: %s", MainActivity.valid));
                         lines.add("Inference time: " + lastProcessingTimeMs + "ms");
