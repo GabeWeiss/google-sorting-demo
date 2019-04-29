@@ -47,6 +47,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-config:16.4.1'
 
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+    implementation 'com.google.firebase:firebase-storage:16.1.0'
 }
 
 apply plugin: 'com.google.gms.google-services'
