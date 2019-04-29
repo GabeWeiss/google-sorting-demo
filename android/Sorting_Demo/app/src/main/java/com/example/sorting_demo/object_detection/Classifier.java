@@ -3,7 +3,6 @@ package com.example.sorting_demo.object_detection;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Trace;
 import android.util.Log;
 
@@ -13,7 +12,6 @@ import org.tensorflow.lite.Interpreter;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
@@ -118,8 +116,8 @@ public class Classifier {
 
         // Run the inference call.
         classifyGearDigit();
-//        imgData.rewind();
-//        detectMissingGearTeeth();
+        imgData.rewind();
+        detectMissingGearTeeth();
         Trace.endSection();
     }
 

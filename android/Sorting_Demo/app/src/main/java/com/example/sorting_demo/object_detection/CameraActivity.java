@@ -87,7 +87,7 @@ public abstract class CameraActivity extends AppCompatActivity
         CANVAS_WIDTH = displayMetrics.widthPixels;
 
         classifier = Classifier.create(getAssets(),
-                MainActivity.DIGI_TF_LITE_MODEL,
+                MainActivity.DIGIT_TF_LITE_MODEL,
                 MainActivity.GEAR_TOOTH_TF_LITE_MODEL,
                 MainActivity.TF_LITE_OBJECT_DETECTION_IMAGE_DIMENSION);
 
