@@ -16,8 +16,9 @@
     <div class="holding-div webcam">
         <div class="heading">Webcam Feed</div>
         <div class="webcam-holder">
-            <!-- <img class="webcam-image" src="img/test.jpg" /> -->
-			<iframe class="webcam-image" src="http://localhost:5000/video"></iframe>
+            <button onclick="feedClick()">Live Feed</button>
+            <button onclick="inferenceClick()">Inference Capture</button>
+            <div id="feed" class="webcam-inner"><iframe class="webcam-image" src="http://localhost:5000/video"></iframe></div>
         </div>
     </div>
     <div class="holding-div numbers">
@@ -53,6 +54,16 @@
     </div>
     <script src="js/pass.js"></script>
     <script src="js/status.js"></script>
+
+    <script>
+        function feedClick() {
+            document.getElementById("feed").innerHTML='<iframe class="webcam-image" src="http://localhost:5000/video"></iframe>';
+        }
+        function inferenceClick() {
+            document.getElementById("feed").innerHTML='<iframe class="webcam-image" src="http://localhost:5000/capture"></iframe>';
+        }
+    </script>
+
 </body>
 
 </html>
