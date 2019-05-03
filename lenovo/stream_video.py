@@ -146,6 +146,13 @@ def capture():
 
 @app.route('/start_capture')
 def start_capture():
+    # We're clearing the capture buffer here because the logic while capturing
+    # is to only grab a buffer frame if the buffer is empty or missing teeth
+    # is detected, and we want to be sure to grab a fresh still each time even
+    # when no teeth are detected
+    global capture_buffer
+    capture_buffer.clear()
+
     global should_capture
     should_capture = True
 
@@ -155,11 +162,7 @@ def start_capture():
 @app.route('/stop_capture')
 def stop_capture():
     global should_capture
-    global capture_buffer
-
     should_capture = False
-    capture_buffer.clear()
-
     return 'OK', 200
 
 
