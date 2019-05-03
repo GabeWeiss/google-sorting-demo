@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/index.css" type="text/css">
     <link rel="stylesheet" href="css/pass.css" type="text/css">
     <link rel="stylesheet" href="css/status.css" type="text/css">
+    <link rel="stylesheet" href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
 </head>
 
 <body>
@@ -16,8 +17,8 @@
     <div class="holding-div webcam">
         <div class="heading">Webcam Feed</div>
         <div class="webcam-holder">
-            <button onclick="feedClick()">Live Feed</button>
-            <button onclick="inferenceClick()">Inference Capture</button>
+            <button class="mdc-button" onclick="feedClick()">Live Feed</button>
+            <button class="mdc-button" onclick="inferenceClick()">Inference Capture</button>
             <div id="feed" class="webcam-inner"><iframe class="webcam-image" src="http://localhost:5000/video"></iframe></div>
         </div>
     </div>
