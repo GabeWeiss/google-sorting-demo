@@ -1,0 +1,26 @@
+<annotation>
+	<folder>images</folder>
+	<filename>c15f50bd-6dd9-4532-abff-014beab65138.jpg</filename>
+	<path>/Users/gweiss/Downloads/images/c15f50bd-6dd9-4532-abff-014beab65138.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>224</width>
+		<height>224</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>gear</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>19</xmin>
+			<ymin>11</ymin>
+			<xmax>189</xmax>
+			<ymax>180</ymax>
+		</bndbox>
+	</object>
+</annotation>
