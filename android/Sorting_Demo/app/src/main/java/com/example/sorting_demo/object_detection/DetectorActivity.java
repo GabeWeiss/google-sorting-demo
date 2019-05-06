@@ -116,20 +116,39 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                         paint.setStyle(Paint.Style.STROKE);
                         paint.setStrokeWidth(12.0f);
 
-                        if (firstBoundingBoxConfidence > 0.6f) {
+                        if (MainActivity.valid.equals("false") && firstBoundingBoxConfidence > 0.6f) {
                             canvas.drawRect(firstBoundingBox[0] * CANVAS_WIDTH,
                                     firstBoundingBox[1] * CANVAS_HEIGHT,
                                     firstBoundingBox[2] * CANVAS_WIDTH,
                                     firstBoundingBox[3] * CANVAS_HEIGHT,
                                     paint);
                         }
-                        if (secondBoundingBoxConfidence > 0.6f) {
+                        paint.setColor(Color.YELLOW);
+                        if (MainActivity.valid.equals("false") && secondBoundingBoxConfidence > 0.6f) {
                             canvas.drawRect(secondBoundingBox[0] * CANVAS_WIDTH,
                                     secondBoundingBox[1] * CANVAS_HEIGHT,
                                     secondBoundingBox[2] * CANVAS_WIDTH,
                                     secondBoundingBox[3] * CANVAS_HEIGHT,
                                     paint);
                         }
+
+//                        paint.setColor(Color.BLUE);
+//                        float confidence = 0.9f;
+//                        if (MainActivity.valid.equals("false") && firstBoundingBoxConfidence > confidence) {
+//                            canvas.drawRect(firstBoundingBox[0] * trackingOverlay.getWidth(),
+//                                    firstBoundingBox[1] * trackingOverlay.getHeight(),
+//                                    firstBoundingBox[2] * trackingOverlay.getWidth(),
+//                                    firstBoundingBox[3] * trackingOverlay.getHeight(),
+//                                    paint);
+//                        }
+//                        paint.setColor(Color.CYAN);
+//                        if (MainActivity.valid.equals("false") && secondBoundingBoxConfidence > confidence) {
+//                            canvas.drawRect(secondBoundingBox[0] * trackingOverlay.getWidth(),
+//                                    secondBoundingBox[1] * trackingOverlay.getHeight(),
+//                                    secondBoundingBox[2] * trackingOverlay.getWidth(),
+//                                    secondBoundingBox[3] * trackingOverlay.getHeight(),
+//                                    paint);
+//                        }
 
                         // Get the
                         final Vector<String> lines = new Vector<String>();
@@ -153,7 +172,7 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                         }
                         final Bitmap copy = Bitmap.createBitmap(croppedBitmap);
                         final Paint paint = new Paint();
-                        paint.setColor(Color.RED);
+                        paint.setColor(Color.GREEN);
                         paint.setStyle(Paint.Style.STROKE);
                         paint.setStrokeWidth(3.0f);
 
@@ -173,6 +192,20 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                         matrix.postTranslate(
                                 canvas.getWidth() - copy.getWidth() * scaleFactor,
                                 canvas.getHeight() - copy.getHeight() * scaleFactor);
+                        if (MainActivity.valid.equals("false") && firstBoundingBoxConfidence > 0.6f) {
+                            canvas2.drawRect(firstBoundingBox[0] * canvas2.getWidth(),
+                                    firstBoundingBox[1] * canvas2.getHeight(),
+                                    firstBoundingBox[2] * canvas2.getWidth(),
+                                    firstBoundingBox[3] * canvas2.getHeight(),
+                                    paint);
+                        }
+                        if (MainActivity.valid.equals("false") && secondBoundingBoxConfidence > 0.6f) {
+                            canvas2.drawRect(secondBoundingBox[0] * canvas2.getWidth(),
+                                    secondBoundingBox[1] * canvas2.getHeight(),
+                                    secondBoundingBox[2] * canvas2.getWidth(),
+                                    secondBoundingBox[3] * canvas2.getHeight(),
+                                    paint);
+                        }
                         canvas.drawBitmap(copy, matrix, new Paint());
 
                         final Vector<String> lines = new Vector<String>();
@@ -188,21 +221,6 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                                 MainActivity.valid));
                         lines.add("Rotation: " + sensorOrientation);
                         lines.add("Inference time: " + lastProcessingTimeMs + "ms");
-
-                        if (firstBoundingBoxConfidence > 0.6f) {
-                            canvas.drawRect(firstBoundingBox[0] * canvas.getWidth(),
-                                    firstBoundingBox[1] * canvas.getHeight(),
-                                    firstBoundingBox[2] * canvas.getWidth(),
-                                    firstBoundingBox[3] * canvas.getHeight(),
-                                    paint);
-                        }
-                        if (secondBoundingBoxConfidence > 0.6f) {
-                            canvas.drawRect(secondBoundingBox[0] * canvas.getWidth(),
-                                    secondBoundingBox[1] * canvas.getHeight(),
-                                    secondBoundingBox[2] * canvas.getWidth(),
-                                    secondBoundingBox[3] * canvas.getHeight(),
-                                    paint);
-                        }
 
                         borderedText.drawLines(canvas, 10, canvas.getHeight() - 10, lines);
                     }
