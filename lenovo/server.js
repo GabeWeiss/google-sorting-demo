@@ -267,6 +267,12 @@ app.post('/', function(req, res) {
         leadNumber = 6;
     }
 
+    // add a bit so that the display matches what we're detecting explicitly. I.e. if we saw a broken
+    // tooth, then we need to be sure the number reflects something broken.
+    if (brokenTooth && leadNumber < 10) {
+        leadNumber += 10;
+    }
+
     // the light sensor in question here is in the grabber claw. So when it's blocked it means
     // we have a gear in the position, AND we've gathered our requisite inferences. I think
     // there's probably some better logic where we only start gathering inferences once the light
