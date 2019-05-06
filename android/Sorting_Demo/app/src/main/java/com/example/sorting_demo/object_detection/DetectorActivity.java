@@ -111,6 +111,26 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                 new DrawCallback() {
                     @Override
                     public void drawCallback(final Canvas canvas) {
+                        final Paint paint = new Paint();
+                        paint.setColor(Color.RED);
+                        paint.setStyle(Paint.Style.STROKE);
+                        paint.setStrokeWidth(12.0f);
+
+                        if (firstBoundingBoxConfidence > 0.6f) {
+                            canvas.drawRect(firstBoundingBox[0] * CANVAS_WIDTH,
+                                    firstBoundingBox[1] * CANVAS_HEIGHT,
+                                    firstBoundingBox[2] * CANVAS_WIDTH,
+                                    firstBoundingBox[3] * CANVAS_HEIGHT,
+                                    paint);
+                        }
+                        if (secondBoundingBoxConfidence > 0.6f) {
+                            canvas.drawRect(secondBoundingBox[0] * CANVAS_WIDTH,
+                                    secondBoundingBox[1] * CANVAS_HEIGHT,
+                                    secondBoundingBox[2] * CANVAS_WIDTH,
+                                    secondBoundingBox[3] * CANVAS_HEIGHT,
+                                    paint);
+                        }
+
                         // Get the
                         final Vector<String> lines = new Vector<String>();
                         lines.add("");
@@ -136,6 +156,7 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                         paint.setColor(Color.RED);
                         paint.setStyle(Paint.Style.STROKE);
                         paint.setStrokeWidth(3.0f);
+
 
                         final Canvas canvas2 = new Canvas(copy);
 
@@ -167,6 +188,21 @@ public class DetectorActivity extends CameraActivity implements ImageReader.OnIm
                                 MainActivity.valid));
                         lines.add("Rotation: " + sensorOrientation);
                         lines.add("Inference time: " + lastProcessingTimeMs + "ms");
+
+                        if (firstBoundingBoxConfidence > 0.6f) {
+                            canvas.drawRect(firstBoundingBox[0] * canvas.getWidth(),
+                                    firstBoundingBox[1] * canvas.getHeight(),
+                                    firstBoundingBox[2] * canvas.getWidth(),
+                                    firstBoundingBox[3] * canvas.getHeight(),
+                                    paint);
+                        }
+                        if (secondBoundingBoxConfidence > 0.6f) {
+                            canvas.drawRect(secondBoundingBox[0] * canvas.getWidth(),
+                                    secondBoundingBox[1] * canvas.getHeight(),
+                                    secondBoundingBox[2] * canvas.getWidth(),
+                                    secondBoundingBox[3] * canvas.getHeight(),
+                                    paint);
+                        }
 
                         borderedText.drawLines(canvas, 10, canvas.getHeight() - 10, lines);
                     }

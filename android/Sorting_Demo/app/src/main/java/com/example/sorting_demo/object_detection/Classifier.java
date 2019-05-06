@@ -163,13 +163,26 @@ public class Classifier {
 
             float max = 0;
             int maxIndex = 0;
+            int secondIndex = 0;
+            float secondMax = 0;
             for (int i = 0; i < NUM_DETECTIONS; i++) {
                 float confidence = outputGearToothScores[0][i];
                 if (confidence > max) {
+                    secondMax = max;
                     max = confidence;
+                    secondIndex = maxIndex;
                     maxIndex = i;
                 }
             }
+
+            // Get Locations
+            for (int i = 0; i < 4; i++) {
+                CameraActivity.firstBoundingBox[i] = outputGearToothLocations[0][maxIndex][i];
+                CameraActivity.secondBoundingBox[i] = outputGearToothLocations[0][secondIndex][i];
+            }
+            CameraActivity.firstBoundingBoxConfidence = max;
+            CameraActivity.secondBoundingBoxConfidence = secondMax;
+
 
 
             // The object detection model has two labels:

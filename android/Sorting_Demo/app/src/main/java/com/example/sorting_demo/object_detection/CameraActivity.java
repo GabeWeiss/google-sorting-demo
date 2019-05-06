@@ -80,6 +80,11 @@ public abstract class CameraActivity extends AppCompatActivity
 
     public boolean uploadPhoto = false;
 
+    public static float firstBoundingBoxConfidence = 0.0f;
+    public static float secondBoundingBoxConfidence = 0.0f;
+    public static float[] firstBoundingBox = new float[4];
+    public static float[] secondBoundingBox = new float[4];
+
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(null);
