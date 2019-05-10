@@ -75,7 +75,7 @@ for x in range(inference_count + 1):
 
     tmp_num = str(tmp_broken) + str(tmp_num)
     
-    #### This is the data structure that is built in enterprise/recognize.py. If changes are made to the
+    #### This is the data structure that is built in server/recognize.py. If changes are made to the
     #### schema there, this will need the same changes.
     d = {
         'number':tmp_num,
