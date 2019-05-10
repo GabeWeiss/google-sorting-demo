@@ -6,7 +6,7 @@
 
 **_dashboard_**: Front-end UI code for displaying the dashboard which is shown on the monitor attached to the demo.
 
-**_enterprise_**: Code that lives and runs on the Edge TPU development board made by Coral (coral.withgoogle.com/products/dev-board)
+**_coral_**: Code that lives and runs on the Edge TPU development board made by Coral (coral.withgoogle.com/products/dev-board)
 
-**_lenovo_**: Code that lives and runs on the Windows Lenovo box. The node.js code that has all the business logic for what to do with the outputs from our AutoML model, as well as running the mechanicals of the demo itself by way of the Arduino.
+**_server_**: Code that lives and runs on the Windows Lenovo box. The node.js code that has all the business logic for what to do with the outputs from our AutoML model, as well as running the mechanicals of the demo itself by way of the Arduino.
 
