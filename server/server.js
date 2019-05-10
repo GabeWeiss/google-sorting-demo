@@ -111,7 +111,7 @@ http.listen(port, function() {
     The THROW_AWAY_COUNT is, as it describes, the number of inferences we throw away before we
     start to "count". We're only getting inferences to us that are above the confidence threshold
     from the model as well, so that's the other knob we can turn, is how low/high we want to accept
-    inferences from the model on the Enterprise board itself.
+    inferences from the model on the Coral board itself.
 
     The INFERENCE_AVERAGE_COUNT is how many inferences to wait for before we start to calculate
     what we think we're seeing. So the code below will take INFERENCE_AVERAGE_COUNT and normalize
@@ -120,7 +120,7 @@ http.listen(port, function() {
 
     Tuning these two is potentially detrimental to the demo, be careful. Keeping in mind, that if
     the confidence of the model is right on the edge of the threshold, it's possible that it could
-    take a very long time to get n inferences from the Enterprise board, and while it's waiting,
+    take a very long time to get n inferences from the Coral board, and while it's waiting,
     the gear will stick in the grabber claw and not be droped. It is indeed possible that the gear
     never drops. Important that whomever is running the demo understands that if/when it happens
     so they can explain it.
@@ -169,7 +169,7 @@ app.post('/', function(req, res) {
     var inference     = Number(body.inference_time);
 
     // If we're still under our average count (which is our magic number + the throwaway count)
-    // then just keep iterating and gathering our inference numbers from the Enterprise board
+    // then just keep iterating and gathering our inference numbers from the Coral board
     if (inferenceCount < INFERENCE_AVERAGE_COUNT) {
         ++inferenceCount;
 
