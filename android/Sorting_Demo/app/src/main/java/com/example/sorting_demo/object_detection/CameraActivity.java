@@ -75,9 +75,6 @@ public abstract class CameraActivity extends AppCompatActivity
 
     public static Classifier classifier;
 
-    public int CANVAS_WIDTH = 1080; // Get the width of the Canvas that is shown on screen
-    public int CANVAS_HEIGHT = 1731; // Get the height of the Canvas that is shown on screen
-
     public boolean uploadPhoto = false;
 
     @Override
@@ -86,8 +83,6 @@ public abstract class CameraActivity extends AppCompatActivity
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        CANVAS_HEIGHT = displayMetrics.heightPixels;
-        CANVAS_WIDTH = displayMetrics.widthPixels;
 
         classifier = Classifier.create(getAssets(),
                 MainActivity.DIGIT_TF_LITE_MODEL,
