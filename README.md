@@ -12,6 +12,8 @@ The source code is split into folders representing the different links in the ar
 
 The Coral board also forwards the video stream from the webcam to a Python process running on the secondary machine. The streaming Python script on the secondary machine also saves off an image buffer of the last "captured" gear with bounding box displaying the missing gear detected, both available to be shown in the Dashboard.
 
+![Architecture diagram](imgs/SortingDemoArchitecture.png)
+
 **_android/Sorting_Demo_**: This is the folder for the Android application used at Google I/O 2019 to show off AutoML's model compiled down to mobile device and showing off the ability to use the same model on multiple formats of devices accurately.
 
 **_base_training_images_**: Holder folder for any images we take and need to transfer between places for training our model. Heavily depending upon lighting changes, etc to be accurate.
