@@ -32,9 +32,13 @@ There is an order dependency on getting the demo running. Each of these requires
 
 1) server/stream_video.py
 
+
 2) set the environment variable for the GOOGLE_PROJECT_ID to your GCP project containing the Firestore instance (if you don't want any telemetry data you can remove a lot of the code around that piece and forget the environment variable in this step)
+
 2a) server/server.js
 
+
 3) coral/recognize.py (this has hardcoded model values in there, which you can change, or you can use the script flags to specify your own models as seen in coral/run_python.sh)
+
 
 4) dashboard/server.js (this is only necessary if you want to be running the dashboard)
