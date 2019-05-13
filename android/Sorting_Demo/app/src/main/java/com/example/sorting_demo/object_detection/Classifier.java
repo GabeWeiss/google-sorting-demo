@@ -26,7 +26,7 @@ import java.util.Map;
 public class Classifier {
 
     // Only return this many results.
-    private static final int NUM_DETECTIONS = 10; // 30
+    private static final int NUM_DETECTIONS = 10;
 
     // Config values.
     private int inputSize = 224;
@@ -139,6 +139,8 @@ public class Classifier {
         }
 
         MainActivity.gearindex = maxIndex % 10;
+        // Since digits can be rotated, there is no way to know if a 6 is a 9 or vice versa,
+        // therefore we shall declare a 9 as a 6.
         if (MainActivity.gearindex == 9) {
             MainActivity.gearindex = 6;
         }
@@ -170,7 +172,6 @@ public class Classifier {
                     maxIndex = i;
                 }
             }
-
 
             // The object detection model has two labels:
             // 0: missing tooth
