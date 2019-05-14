@@ -30,8 +30,26 @@ The Coral board also forwards the video stream from the webcam to a Python proce
 
 There is an order dependency on getting the demo running. Each of these requires running in its own terminal window as the processes keep running.
 
--- server/stream_video.py<br>
--- set the environment variable for the GOOGLE_PROJECT_ID to your GCP project containing the Firestore instance (if you don't want any telemetry data you can remove a lot of the code around that piece and forget the environment variable in this step)<br>
----- server/server.js<br>
--- coral/recognize.py (this has hardcoded model values in there, which you can change, or you can use the script flags to specify your own models as seen in coral/run_python.sh)<br>
--- dashboard/server.js (this is only necessary if you want to be running the dashboard)<br>
+<ol>
+  <li>Streaming server pass-through for dashboard feed
+  <ol>
+    <li>server/stream_video.py</li>
+  </ol>
+  </li>
+  <li>Node server receiving telemetry from Coral board
+    <ol>
+      <li>set the environment variable for the GOOGLE_PROJECT_ID to your GCP project containing the Firestore instance (if you don't want any telemetry data you can remove a lot of the code around that piece and forget the environment variable in this step)</li>
+      <li>server/server.js</li>
+    </ol>
+  </li>
+  <li>Python Coral SDK script to do the actual inference on the Coral board
+    <ol>
+      <li>coral/recognize.py (this has hardcoded model values in there, which you can change, or you can use the script flags to specify your own models as seen in coral/run_python.sh)</li>
+    </ol>
+  </li>
+  <li>Node server which handles serving up the Dashboard JavaScript page
+    <ol>
+      <li>dashboard/server.js (this is only necessary if you want to be running the dashboard)</li>
+    </ol>
+  </li>
+  </ol>
