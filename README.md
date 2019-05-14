@@ -1,4 +1,4 @@
-## This repo contains the source control for a demo we created to show off machine learning on the edge using the [Edge TPU Development Board](http://coral.withgoogle.com/products/dev-board) made by the Coral team (internal Google hardware team).
+## This repo contains the source code for a demo we created to show off machine learning on the edge using the [Edge TPU Development Board](http://coral.withgoogle.com/products/dev-board) made by the Coral team at Google.
 
 ![Demo in all its glory](imgs/Sorting_Demo_GoogleIO.png)
 
