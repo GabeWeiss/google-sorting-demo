@@ -21,9 +21,6 @@ app.use('/jquery.js', express.static(__dirname + '/node_modules/jquery/dist/jque
 app.get('/', function (req, res) {
     res.sendFile(__dirname + '/index.html');
 });
-app.get('/status', function (req, res) {
-    res.sendFile(__dirname + '/status.html');
-});
 
 http.listen(port, function () {
     console.log('listening on *:' + port);
