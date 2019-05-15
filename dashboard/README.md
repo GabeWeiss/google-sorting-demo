@@ -1,3 +1,3 @@
 These files serve up the live dashboard that runs on a monitor attached to the secondary machine. We ran it on that secondary machine directly for our demo, but there's no reason it has to. It can be run anywhere, as long as it has the ability to access the port that's open on the secondary machine serving up the video feed from the Coral Dev Board.
 
-server.js is the primary file, and the only one that needs to be run directly. The rest all support that process. Dashboard listens on port 8000, so if looking at the dashboard locally, you can point a browser to localhost:8000 to see the dashboard.
+**server.js** is the primary file, and the only one that needs to be run directly. The rest all support that process. Dashboard listens on port 8000, so if looking at the dashboard locally, you can point a browser to localhost:8000 to see the dashboard.
