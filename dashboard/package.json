@@ -13,6 +13,6 @@
     "express": "^4.16.4",
     "firebase-admin": "^7.1.0",
     "jquery": "^3.5.0",
-    "socket.io": "^2.2.0"
+    "socket.io": "^2.4.0"
   }
 }
