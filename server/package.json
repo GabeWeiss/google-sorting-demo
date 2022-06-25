@@ -9,7 +9,7 @@
     "firebase-admin": "^7.0.0",
     "johnny-five": "^1.0.0",
     "jquery": "^3.5.0",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^2.6.7",
     "phidget22": "^2.0.7",
     "readline": "^1.3.0",
     "socket.io": "^2.1.1",
