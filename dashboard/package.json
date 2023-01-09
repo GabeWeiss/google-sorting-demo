@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.16.4",
-    "firebase-admin": "^7.1.0",
+    "firebase-admin": "^11.4.1",
     "jquery": "^3.5.0",
     "socket.io": "^2.2.0"
   }
